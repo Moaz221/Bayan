@@ -8,7 +8,7 @@ import { getGradeLabel, GRADE_OPTIONS } from '../../lib/gradeOptions';
 import {
   makeUserAdmin,
   toggleStudentActivation,
-  updateStudentSubscription,
+  updateStudentSubscriptionFull, // ✅ الجديد
 } from '../../lib/admin';
 import { useToast } from '../shared/ToastProvider';
 
@@ -72,7 +72,6 @@ const StudentsTable = ({ students, onRefresh }) => {
     });
   }, [students, search, gradeFilter, statusFilter]);
 
-  // ============== CONFIRM MODAL ==============
   const openConfirm = (type, student) => {
     setConfirmState({ open: true, type, student });
   };
@@ -118,7 +117,6 @@ const StudentsTable = ({ students, onRefresh }) => {
     }
   };
 
-  // ============== SUBSCRIPTION MODAL ==============
   const openSubscriptionModal = (student) => {
     setSubscriptionModal({ open: true, student });
   };
@@ -131,17 +129,20 @@ const StudentsTable = ({ students, onRefresh }) => {
 
     try {
       setLoadingId(subscriptionModal.student.id);
-      await updateStudentSubscription(subscriptionModal.student.id, formData);
+      
+      // ✅ الـ function الجديدة - بتسجل الـ access تلقائياً
+      await updateStudentSubscriptionFull(subscriptionModal.student.id, formData);
 
       showToast({
         type: 'success',
         title: 'تم تحديث الاشتراك',
-        message: `تم حفظ بيانات اشتراك ${subscriptionModal.student.full_name}`,
+        message: `تم حفظ بيانات اشتراك ${subscriptionModal.student.full_name} وتفعيل الوحدات`,
       });
 
       closeSubscriptionModal();
       await onRefresh();
     } catch (error) {
+      console.error('Subscription error:', error);
       showToast({
         type: 'error',
         title: 'حدث خطأ',
@@ -162,7 +163,6 @@ const StudentsTable = ({ students, onRefresh }) => {
           </p>
         </div>
 
-        {/* FILTERS */}
         <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
           <div className="relative">
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
@@ -199,7 +199,6 @@ const StudentsTable = ({ students, onRefresh }) => {
           </select>
         </div>
 
-        {/* TABLE */}
         {filteredStudents.length === 0 ? (
           <EmptyState title="لا توجد نتائج" description="جرّب تعديل البحث أو الفلاتر." />
         ) : (
@@ -236,7 +235,6 @@ const StudentsTable = ({ students, onRefresh }) => {
                       </span>
                     </td>
 
-                    {/* الاشتراك */}
                     <td className="px-4 py-4">
                       <div className="flex flex-col items-end gap-1.5">
                         <span className="text-xs font-bold text-white">
@@ -310,7 +308,6 @@ const StudentsTable = ({ students, onRefresh }) => {
         )}
       </AdminSectionCard>
 
-      {/* CONFIRM MODAL */}
       <ConfirmModal
         open={confirmState.open}
         onCancel={closeConfirm}
@@ -340,7 +337,6 @@ const StudentsTable = ({ students, onRefresh }) => {
         }
       />
 
-      {/* SUBSCRIPTION MODAL */}
       <SubscriptionModal
         open={subscriptionModal.open}
         student={subscriptionModal.student}

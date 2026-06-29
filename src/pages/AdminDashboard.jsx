@@ -10,7 +10,14 @@ import LessonsManager from '../components/Admin/LessonsManager';
 import PlansManager from '../components/Admin/PlansManager';
 import AdminSectionCard from '../components/Admin/AdminSectionCard';
 import LoadingScreen from '../components/shared/LoadingScreen';
-import { getAdminStats, getAllLessons, getAllStudents, getAllUnits, getAllPlans, getAllExams } from '../lib/admin';
+import { 
+  getAdminStats, 
+  getAllLessons, 
+  getAllStudents, 
+  getAllUnits, 
+  getAllPlans, 
+  getAllExams 
+} from '../lib/admin'; // ✅ هنا `..` مرة واحدة
 import '../styles/admin.css';
 
 const AdminDashboard = () => {
@@ -56,7 +63,7 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <AdminOverview stats={stats} />;
+        return <AdminOverview />; // ✅ بدون props
       case 'students':
         return <StudentsTable students={students} onRefresh={loadDashboardData} />;
       case 'units':
@@ -77,7 +84,7 @@ const AdminDashboard = () => {
           </AdminSectionCard>
         );
       default:
-        return <AdminOverview stats={stats} />;
+        return <AdminOverview />;
     }
   };
 

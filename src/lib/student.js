@@ -1,9 +1,8 @@
 import { supabase } from '../supabaseClient';
 
 // =========================================================
-// جلب بيانات الطالب الكاملة (الاشتراك + الوصول)
+// جلب بيانات الطالب
 // =========================================================
-
 export const getStudentProfile = async (userId) => {
   const { data, error } = await supabase
     .from('profiles')
@@ -16,16 +15,17 @@ export const getStudentProfile = async (userId) => {
 };
 
 // =========================================================
-// جلب كل الوحدات مع تحديد المتاح والمقفول
+// ✅ الجديد: جلب الوحدات بناءً على student_unit_access مباشرة
 // =========================================================
-
 export const getUnitsWithAccess = async (profile) => {
-  // جلب كل الوحدات حسب صف الطالب
+  if (!profile?.grade_level) return [];
+
+  // 1. جيب كل وحدات الصف
   const { data: units, error } = await supabase
     .from('units')
     .select(`
       *,
-      lessons ( id, title, video_url, lesson_pdf_url, exam_pdf_url, description )
+      lessons ( id, title, video_url, lesson_pdf_url, exam_pdf_url, homework_pdf_url, description )
     `)
     .eq('grade_level', profile.grade_level)
     .order('term', { ascending: true })
@@ -34,80 +34,69 @@ export const getUnitsWithAccess = async (profile) => {
   if (error) throw error;
   if (!units) return [];
 
-  // تحديد ما هو متاح بناءً على نوع الاشتراك
-  const accessMode = profile.access_mode || 'full_grade';
-  const subscriptionType = profile.subscription_type;
-  const subscriptionStatus = profile.subscription_status;
+  const isSubscriptionActive = 
+    profile.is_active && profile.subscription_status === 'active';
 
-  // لو الاشتراك مش active → كل حاجة مقفولة
-  const isSubscriptionActive = subscriptionStatus === 'active';
+  // 2. لو الاشتراك مش active → كل حاجة مقفولة
+  if (!isSubscriptionActive) {
+    return units.map((unit) => ({
+      ...unit,
+      isAccessible: false,
+      lessonsCount: unit.lessons?.length || 0,
+    }));
+  }
 
-  // جلب الوحدات المخصصة للطالب لو access_mode = custom_units
-  let customUnitIds = [];
-  if (accessMode === 'custom_units' && isSubscriptionActive) {
-    const { data: accessData } = await supabase
-      .from('student_unit_access')
-      .select('unit_id')
+  // 3. ✅ جيب الوحدات المتاحة من student_unit_access مباشرة
+  const { data: accessData, error: accessError } = await supabase
+    .from('student_unit_access')
+    .select('unit_id')
+    .eq('student_id', profile.id);
+
+  if (accessError) throw accessError;
+
+  const accessibleUnitIds = new Set((accessData || []).map((a) => a.unit_id));
+
+  // 4. ✅ في حالة custom_lessons، الوحدة تكون متاحة لو فيها أي درس متاح
+  let accessibleLessonsByUnit = new Map();
+  if (profile.access_mode === 'custom_lessons') {
+    const { data: lessonAccess } = await supabase
+      .from('student_lesson_access')
+      .select('lesson_id, lessons(unit_id)')
       .eq('student_id', profile.id);
-    customUnitIds = (accessData || []).map((a) => a.unit_id);
-  }
 
-  // جلب الباقة المرتبطة بالطالب (للشهري خاصة)
-  let planUnitIds = [];
-  if (subscriptionType === 'monthly' && isSubscriptionActive) {
-    const { data: planData } = await supabase
-      .from('subscription_plans')
-      .select(`
-        plan_units ( unit_id )
-      `)
-      .eq('grade_level', profile.grade_level)
-      .eq('plan_type', 'monthly')
-      .eq('is_active', true)
-      .limit(1)
-      .maybeSingle();
-
-    if (planData?.plan_units) {
-      planUnitIds = planData.plan_units.map((pu) => pu.unit_id);
-    }
-  }
-
-  // تحديد هل الوحدة متاحة للطالب
-  const isUnitAccessible = (unit) => {
-    if (!isSubscriptionActive) return false;
-
-    switch (accessMode) {
-      case 'full_grade':
-        // الترم/السنوي: كل الوحدات العادية
-        if (subscriptionType === 'yearly') return !unit.is_final_review;
-        if (subscriptionType === 'term') {
-          return !unit.is_final_review && String(unit.term) === String(profile.subscription_term);
+    (lessonAccess || []).forEach((row) => {
+      const unitId = row.lessons?.unit_id;
+      if (unitId) {
+        if (!accessibleLessonsByUnit.has(unitId)) {
+          accessibleLessonsByUnit.set(unitId, new Set());
         }
-        return false;
+        accessibleLessonsByUnit.get(unitId).add(row.lesson_id);
+      }
+    });
+  }
 
-      case 'final_review_only':
-        return unit.is_final_review === true;
+  // 5. حدد الـ accessibility
+  return units.map((unit) => {
+    let isAccessible = false;
 
-      case 'custom_units':
-        return customUnitIds.includes(unit.id);
-
-      default:
-        if (subscriptionType === 'monthly') return planUnitIds.includes(unit.id);
-        return false;
+    if (profile.access_mode === 'custom_lessons') {
+      // متاحة لو فيها درس واحد على الأقل متاح
+      isAccessible = accessibleLessonsByUnit.has(unit.id);
+    } else {
+      isAccessible = accessibleUnitIds.has(unit.id);
     }
-  };
 
-  // تجميع الوحدات مع حالة الوصول
-  return units.map((unit) => ({
-    ...unit,
-    isAccessible: isUnitAccessible(unit),
-    lessonsCount: unit.lessons?.length || 0,
-  }));
+    return {
+      ...unit,
+      isAccessible,
+      lessonsCount: unit.lessons?.length || 0,
+    };
+  });
 };
 
 // =========================================================
-// جلب دروس وحدة معينة مع تحديد المتاح
+// ✅ جلب دروس الوحدة (محدّث)
 // =========================================================
-
 export const getLessonsWithAccess = async (unitId, profile) => {
   const { data: lessons, error } = await supabase
     .from('lessons')
@@ -118,32 +107,50 @@ export const getLessonsWithAccess = async (unitId, profile) => {
   if (error) throw error;
   if (!lessons) return [];
 
-  // تحقق من access_mode
-  const isCustomLessons = profile.access_mode === 'custom_lessons';
-  const isSubscriptionActive = profile.subscription_status === 'active';
+  const isSubscriptionActive =
+    profile.is_active && profile.subscription_status === 'active';
 
-  let accessibleLessonIds = [];
-  if (isCustomLessons && isSubscriptionActive) {
+  if (!isSubscriptionActive) {
+    return lessons.map((lesson) => ({ ...lesson, isAccessible: false }));
+  }
+
+  // لو الـ mode = custom_lessons → اقرأ من student_lesson_access
+  if (profile.access_mode === 'custom_lessons') {
     const { data: accessData } = await supabase
       .from('student_lesson_access')
       .select('lesson_id')
       .eq('student_id', profile.id);
-    accessibleLessonIds = (accessData || []).map((a) => a.lesson_id);
+
+    const accessibleIds = new Set((accessData || []).map((a) => a.lesson_id));
+
+    return lessons.map((lesson) => ({
+      ...lesson,
+      isAccessible: accessibleIds.has(lesson.id),
+    }));
   }
+
+  // باقي الأنواع: تحقق إن الوحدة نفسها متاحة في student_unit_access
+  const { data: unitAccess } = await supabase
+    .from('student_unit_access')
+    .select('unit_id')
+    .eq('student_id', profile.id)
+    .eq('unit_id', Number(unitId))
+    .maybeSingle();
+
+  const unitIsAccessible = !!unitAccess;
 
   return lessons.map((lesson) => ({
     ...lesson,
-    isAccessible: isCustomLessons
-      ? accessibleLessonIds.includes(lesson.id)
-      : true, // لو الوحدة متاحة أصلاً → كل دروسها متاحة
+    isAccessible: unitIsAccessible,
   }));
 };
 
 // =========================================================
-// جلب امتحانات متاحة للطالب
+// ✅ جلب الامتحانات (محدّث)
 // =========================================================
-
 export const getStudentExams = async (profile) => {
+  if (!profile?.grade_level) return [];
+
   const { data, error } = await supabase
     .from('exams')
     .select(`
@@ -158,28 +165,59 @@ export const getStudentExams = async (profile) => {
   if (error) throw error;
   if (!data) return [];
 
-  const isSubscriptionActive = profile.subscription_status === 'active';
-  const subscriptionType = profile.subscription_type;
-  const accessMode = profile.access_mode;
+  const isSubscriptionActive =
+    profile.is_active && profile.subscription_status === 'active';
+
+  if (!isSubscriptionActive) {
+    return data.map((exam) => ({
+      ...exam,
+      isAccessible: false,
+      questionsCount: exam.exam_questions?.length || 0,
+    }));
+  }
+
+  // جيب الوحدات والدروس المتاحة
+  const [unitAccessRes, lessonAccessRes] = await Promise.all([
+    supabase.from('student_unit_access').select('unit_id').eq('student_id', profile.id),
+    supabase.from('student_lesson_access').select('lesson_id').eq('student_id', profile.id),
+  ]);
+
+  const accessibleUnitIds = new Set((unitAccessRes.data || []).map((a) => a.unit_id));
+  const accessibleLessonIds = new Set((lessonAccessRes.data || []).map((a) => a.lesson_id));
 
   return data.map((exam) => {
     let accessible = false;
 
-    if (!isSubscriptionActive) {
-      accessible = false;
-    } else if (accessMode === 'final_review_only') {
-      accessible = exam.is_final_review === true;
-    } else if (subscriptionType === 'yearly') {
-      accessible = !exam.is_final_review &&
-        (exam.grade_level === null || exam.grade_level === profile.grade_level);
-    } else if (subscriptionType === 'term') {
-      accessible =
-        !exam.is_final_review &&
-        (exam.grade_level === null || exam.grade_level === profile.grade_level);
-    } else if (subscriptionType === 'monthly') {
-      accessible = exam.scope_type === 'lesson' || exam.scope_type === 'unit';
-    } else {
-      accessible = false;
+    // فلترة حسب الصف
+    const matchesGrade = exam.grade_level === null || exam.grade_level === Number(profile.grade_level);
+    if (!matchesGrade) {
+      return {
+        ...exam,
+        isAccessible: false,
+        questionsCount: exam.exam_questions?.length || 0,
+      };
+    }
+
+    // امتحان درس → تحقق من الدرس
+    if (exam.scope_type === 'lesson' && exam.lesson_id) {
+      // متاح لو الدرس متاح أو الوحدة بتاعته متاحة
+      accessible = accessibleLessonIds.has(exam.lesson_id) ||
+        (exam.units?.id && accessibleUnitIds.has(exam.units.id));
+    }
+    // امتحان وحدة → تحقق من الوحدة
+    else if (exam.scope_type === 'unit' && exam.unit_id) {
+      accessible = accessibleUnitIds.has(exam.unit_id);
+    }
+    // امتحان ترم → تحقق إن الطالب عنده وحدة من الترم ده
+    else if (exam.scope_type === 'term') {
+      accessible = profile.access_mode === 'full_grade' && 
+        (profile.subscription_type === 'yearly' || 
+         (profile.subscription_type === 'term'));
+    }
+    // امتحان سنوي
+    else if (exam.scope_type === 'yearly') {
+      accessible = profile.subscription_type === 'yearly' && 
+        profile.access_mode === 'full_grade';
     }
 
     return {
@@ -191,9 +229,8 @@ export const getStudentExams = async (profile) => {
 };
 
 // =========================================================
-// جلب امتحان كامل مع الأسئلة والاختيارات للطالب
+// باقي الـ functions زي ما هي
 // =========================================================
-
 export const getExamForStudent = async (examId) => {
   const { data, error } = await supabase
     .from('exams')
@@ -210,22 +247,17 @@ export const getExamForStudent = async (examId) => {
 
   if (error) throw error;
 
-  // ترتيب الأسئلة والاختيارات (بدون كشف الإجابة الصحيحة!)
   const sortedQuestions = (data.exam_questions || [])
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((q) => ({
       ...q,
       exam_question_options: (q.exam_question_options || [])
         .sort((a, b) => a.sort_order - b.sort_order)
-        .map(({ is_correct: _hidden, ...rest }) => rest), // إخفاء الإجابة الصحيحة!
+        .map(({ is_correct: _hidden, ...rest }) => rest),
     }));
 
   return { ...data, exam_questions: sortedQuestions };
 };
-
-// =========================================================
-// حفظ نتيجة الامتحان (مرة واحدة فقط)
-// =========================================================
 
 export const checkExamAttempt = async (examId, studentId) => {
   const { data, error } = await supabase
@@ -236,22 +268,17 @@ export const checkExamAttempt = async (examId, studentId) => {
     .maybeSingle();
 
   if (error) throw error;
-  return data; // null = لم يؤدِ بعد
+  return data;
 };
 
 export const submitExamAttempt = async ({ examId, studentId, answers, totalQuestions }) => {
-  // جلب الإجابات الصحيحة من قاعدة البيانات
   const { data: options, error } = await supabase
     .from('exam_question_options')
     .select('id, question_id, is_correct')
-    .in(
-      'question_id',
-      answers.map((a) => a.question_id)
-    );
+    .in('question_id', answers.map((a) => a.question_id));
 
   if (error) throw error;
 
-  // حساب الدرجة
   let score = 0;
   const detailedAnswers = answers.map((answer) => {
     const correct = options.find(
@@ -266,7 +293,6 @@ export const submitExamAttempt = async ({ examId, studentId, answers, totalQuest
     };
   });
 
-  // حفظ المحاولة
   const { data: attempt, error: attemptError } = await supabase
     .from('student_exam_attempts')
     .insert([{
@@ -282,7 +308,6 @@ export const submitExamAttempt = async ({ examId, studentId, answers, totalQuest
 
   if (attemptError) throw attemptError;
 
-  // حفظ التفاصيل
   if (detailedAnswers.length > 0) {
     await supabase.from('student_exam_answers').insert(
       detailedAnswers.map((a) => ({
@@ -297,10 +322,6 @@ export const submitExamAttempt = async ({ examId, studentId, answers, totalQuest
 
   return { attempt, score, total: totalQuestions, detailedAnswers };
 };
-
-// =========================================================
-// جلب الباقات المتاحة (للـ Pricing Page)
-// =========================================================
 
 export const getActivePlans = async () => {
   const { data, error } = await supabase

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, CalendarDays, CheckCircle2, Pencil, Search, Trash2 } from 'lucide-react';
+import { BookOpen, CalendarDays, CheckCircle2, Pencil, Search, Trash2, Send } from 'lucide-react';
 import AdminSectionCard from './AdminSectionCard';
 import EmptyState from '../shared/EmptyState';
 import ConfirmModal from '../shared/ConfirmModal';
@@ -18,12 +18,12 @@ const UnitsManager = ({ units, onRefresh }) => {
     grade_level: '1',
     term: '1',
     is_final_review: false,
+    telegram_group_url: '', // ✅ الجديد
   });
 
   const [loading, setLoading] = useState(false);
   const [editingUnitId, setEditingUnitId] = useState(null);
   const [deleteState, setDeleteState] = useState({ open: false, unit: null });
-
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [termFilter, setTermFilter] = useState('all');
@@ -34,24 +34,15 @@ const UnitsManager = ({ units, onRefresh }) => {
   const filteredUnits = useMemo(() => {
     return (units || []).filter((unit) => {
       const matchesSearch = unit.title?.toLowerCase().includes(search.toLowerCase());
-
-      const matchesGrade =
-        gradeFilter === 'all' ? true : String(unit.grade_level) === String(gradeFilter);
-
+      const matchesGrade = gradeFilter === 'all' ? true : String(unit.grade_level) === String(gradeFilter);
       const matchesTerm =
-        termFilter === 'all'
-          ? true
-          : termFilter === 'none'
-          ? !unit.term
-          : String(unit.term) === String(termFilter);
-
+        termFilter === 'all' ? true :
+        termFilter === 'none' ? !unit.term :
+        String(unit.term) === String(termFilter);
       const matchesType =
-        typeFilter === 'all'
-          ? true
-          : typeFilter === 'final'
-          ? unit.is_final_review === true
-          : unit.is_final_review !== true;
-
+        typeFilter === 'all' ? true :
+        typeFilter === 'final' ? unit.is_final_review === true :
+        unit.is_final_review !== true;
       return matchesSearch && matchesGrade && matchesTerm && matchesType;
     });
   }, [units, search, gradeFilter, termFilter, typeFilter]);
@@ -62,6 +53,7 @@ const UnitsManager = ({ units, onRefresh }) => {
       grade_level: '1',
       term: '1',
       is_final_review: false,
+      telegram_group_url: '', // ✅
     });
     setEditingUnitId(null);
   };
@@ -70,19 +62,22 @@ const UnitsManager = ({ units, onRefresh }) => {
     e.preventDefault();
 
     if (!form.title.trim()) {
-      showToast({
-        type: 'error',
-        title: 'اسم الوحدة مطلوب',
-        message: 'اكتب اسم الوحدة أولًا',
-      });
+      showToast({ type: 'error', title: 'اسم الوحدة مطلوب', message: 'اكتب اسم الوحدة أولًا' });
       return;
     }
 
     if (!form.is_final_review && !form.term) {
-      showToast({
-        type: 'error',
-        title: 'الترم مطلوب',
-        message: 'اختر الترم الخاص بالوحدة',
+      showToast({ type: 'error', title: 'الترم مطلوب', message: 'اختر الترم الخاص بالوحدة' });
+      return;
+    }
+
+    // ✅ التحقق من صحة رابط التيليجرام لو اتحط
+    const telegramUrl = form.telegram_group_url.trim();
+    if (telegramUrl && !telegramUrl.startsWith('https://t.me/')) {
+      showToast({ 
+        type: 'error', 
+        title: 'رابط غير صحيح', 
+        message: 'رابط التيليجرام يجب أن يبدأ بـ https://t.me/' 
       });
       return;
     }
@@ -92,37 +87,22 @@ const UnitsManager = ({ units, onRefresh }) => {
       grade_level: Number(form.grade_level),
       term: form.term ? Number(form.term) : null,
       is_final_review: !!form.is_final_review,
+      telegram_group_url: telegramUrl || null, // ✅
     };
 
     try {
       setLoading(true);
-
       if (editingUnitId) {
         await updateUnit(editingUnitId, payload);
-
-        showToast({
-          type: 'success',
-          title: 'تم تعديل الوحدة',
-          message: 'تم حفظ التعديلات بنجاح',
-        });
+        showToast({ type: 'success', title: 'تم تعديل الوحدة', message: 'تم حفظ التعديلات بنجاح' });
       } else {
         await createUnit(payload);
-
-        showToast({
-          type: 'success',
-          title: 'تمت إضافة الوحدة',
-          message: 'أضيفت الوحدة الجديدة بنجاح',
-        });
+        showToast({ type: 'success', title: 'تمت إضافة الوحدة', message: 'أضيفت الوحدة الجديدة بنجاح' });
       }
-
       resetForm();
       await onRefresh();
     } catch (error) {
-      showToast({
-        type: 'error',
-        title: 'تعذر حفظ الوحدة',
-        message: error.message || 'حدث خطأ غير متوقع',
-      });
+      showToast({ type: 'error', title: 'تعذر حفظ الوحدة', message: error.message || 'حدث خطأ غير متوقع' });
     } finally {
       setLoading(false);
     }
@@ -135,39 +115,24 @@ const UnitsManager = ({ units, onRefresh }) => {
       grade_level: String(unit.grade_level || '1'),
       term: unit.term ? String(unit.term) : '',
       is_final_review: !!unit.is_final_review,
+      telegram_group_url: unit.telegram_group_url || '', // ✅
     });
   };
 
-  const openDelete = (unit) => {
-    setDeleteState({ open: true, unit });
-  };
-
-  const closeDelete = () => {
-    setDeleteState({ open: false, unit: null });
-  };
+  const openDelete = (unit) => setDeleteState({ open: true, unit });
+  const closeDelete = () => setDeleteState({ open: false, unit: null });
 
   const handleDelete = async () => {
     if (!deleteState.unit) return;
-
     try {
       setLoading(true);
       await deleteUnit(deleteState.unit.id);
-
-      showToast({
-        type: 'success',
-        title: 'تم حذف الوحدة',
-        message: `تم حذف وحدة ${deleteState.unit.title}`,
-      });
-
+      showToast({ type: 'success', title: 'تم حذف الوحدة', message: `تم حذف وحدة ${deleteState.unit.title}` });
       closeDelete();
       resetForm();
       await onRefresh();
     } catch (error) {
-      showToast({
-        type: 'error',
-        title: 'تعذر حذف الوحدة',
-        message: error.message || 'قد تكون الوحدة مرتبطة بدروس أو باقات حالية',
-      });
+      showToast({ type: 'error', title: 'تعذر حذف الوحدة', message: error.message || 'قد تكون الوحدة مرتبطة بدروس أو باقات حالية' });
     } finally {
       setLoading(false);
     }
@@ -183,7 +148,7 @@ const UnitsManager = ({ units, onRefresh }) => {
               {editingUnitId ? 'تعديل الوحدة' : 'إضافة وحدة جديدة'}
             </h3>
             <p className="mt-1 text-sm leading-6 text-gray-400">
-              حدّد الصف والترم ونوع الوحدة حتى يتم ربطها لاحقًا بالباقات والاشتراكات.
+              حدّد الصف والترم ونوع الوحدة وجروب التيليجرام.
             </p>
           </div>
 
@@ -226,13 +191,30 @@ const UnitsManager = ({ units, onRefresh }) => {
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/40"
               >
                 {form.is_final_review && (
-                  <option value="" className="bg-[#0B1120]">
-                    بدون ترم / مراجعة نهائية عامة
-                  </option>
+                  <option value="" className="bg-[#0B1120]">بدون ترم / مراجعة نهائية عامة</option>
                 )}
                 <option value="1" className="bg-[#0B1120]">الترم الأول</option>
                 <option value="2" className="bg-[#0B1120]">الترم الثاني</option>
               </select>
+            </div>
+
+            {/* ✅ لينك جروب التيليجرام - الجديد */}
+            <div>
+              <label className="mb-2 flex items-center justify-end gap-2 text-sm text-gray-300">
+                لينك جروب التيليجرام
+                <Send size={14} className="text-sky-400" />
+              </label>
+              <input
+                type="text"
+                value={form.telegram_group_url}
+                onChange={(e) => setForm({ ...form, telegram_group_url: e.target.value })}
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-[#D4AF37]/40"
+                placeholder="https://t.me/..."
+                dir="ltr"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                اختياري — سيظهر للطلاب المشتركين في هذه الوحدة
+              </p>
             </div>
 
             {/* مراجعة نهائية */}
@@ -250,7 +232,6 @@ const UnitsManager = ({ units, onRefresh }) => {
                 }}
                 className="h-5 w-5 accent-[#D4AF37]"
               />
-
               <div className="text-right">
                 <p className="text-sm font-bold text-white">وحدة مراجعة نهائية</p>
                 <p className="mt-1 text-xs text-gray-500">
@@ -294,10 +275,7 @@ const UnitsManager = ({ units, onRefresh }) => {
           {/* Filters */}
           <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-4" dir="rtl">
             <div className="relative">
-              <Search
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-                size={18}
-              />
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
               <input
                 type="text"
                 placeholder="ابحث باسم الوحدة"
@@ -362,7 +340,6 @@ const UnitsManager = ({ units, onRefresh }) => {
                       >
                         <Pencil size={16} />
                       </button>
-
                       <button
                         onClick={() => openDelete(unit)}
                         className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-red-300 transition hover:bg-red-500/15"
@@ -371,7 +348,7 @@ const UnitsManager = ({ units, onRefresh }) => {
                       </button>
                     </div>
 
-                    <div>
+                    <div className="flex-1">
                       <h4 className="text-lg font-bold text-white">{unit.title}</h4>
 
                       <div className="mt-3 flex flex-wrap justify-end gap-2">
@@ -392,6 +369,21 @@ const UnitsManager = ({ units, onRefresh }) => {
                           </span>
                         )}
                       </div>
+
+                      {/* ✅ زر جروب التيليجرام */}
+                      {unit.telegram_group_url && (
+                        <div className="mt-3">
+                          <a
+                            href={unit.telegram_group_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 rounded-xl bg-sky-500/10 px-3 py-2 text-xs font-bold text-sky-300 transition hover:bg-sky-500/20"
+                          >
+                            <Send size={13} />
+                            جروب التيليجرام
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

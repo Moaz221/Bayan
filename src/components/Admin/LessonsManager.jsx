@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FileText, Link2, Pencil, Play, Search, Trash2, Video } from 'lucide-react';
+import { FileText, Link2, Pencil, Play, Search, Trash2, Video, BookMarked } from 'lucide-react';
 import AdminSectionCard from './AdminSectionCard';
 import EmptyState from '../shared/EmptyState';
 import ConfirmModal from '../shared/ConfirmModal';
@@ -9,35 +9,31 @@ import { useToast } from '../shared/ToastProvider';
 
 const LessonsManager = ({ lessons, units, onRefresh }) => {
   const [form, setForm] = useState({
-    unit_id: '', // يبدأ فارغاً لعدم وجود اختيار افتراضي
+    unit_id: '',
     title: '',
     video_url: '',
     lesson_pdf_url: '',
     exam_pdf_url: '',
+    homework_pdf_url: '', // ✅ الجديد
     description: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [editingLessonId, setEditingLessonId] = useState(null);
   const [deleteState, setDeleteState] = useState({ open: false, lesson: null });
-  
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
 
-  // التأكد من أن units مصفوفة صحيحة
   const validUnits = useMemo(() => Array.isArray(units) ? units : [], [units]);
   const { showToast } = useToast();
 
   const filteredLessons = useMemo(() => {
     return Array.isArray(lessons) ? lessons.filter((lesson) => {
-      // التحقق من صحة البيانات قبل الفلترة
       const unitName = lesson.title?.toLowerCase() || '';
       const searchLower = search.toLowerCase();
       const matchesSearch = unitName.includes(searchLower);
-      
       const gradeLevel = String(lesson.units?.grade_level || '');
       const matchesGrade = gradeFilter === 'all' ? true : gradeLevel === String(gradeFilter);
-
       return matchesSearch && matchesGrade;
     }) : [];
   }, [lessons, search, gradeFilter]);
@@ -49,6 +45,7 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
       video_url: '',
       lesson_pdf_url: '',
       exam_pdf_url: '',
+      homework_pdf_url: '', // ✅
       description: '',
     });
     setEditingLessonId(null);
@@ -63,17 +60,17 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
     }
 
     const payload = {
-      unit_id: Number(form.unit_id), // تحويل للرقم الصحيح
+      unit_id: Number(form.unit_id),
       title: form.title.trim(),
       video_url: form.video_url.trim() || null,
       lesson_pdf_url: form.lesson_pdf_url.trim() || null,
       exam_pdf_url: form.exam_pdf_url.trim() || null,
+      homework_pdf_url: form.homework_pdf_url.trim() || null, // ✅
       description: form.description.trim() || null,
     };
 
     try {
       setLoading(true);
-
       if (editingLessonId) {
         await updateLesson(editingLessonId, payload);
         showToast({ type: 'success', title: 'تم التعديل بنجاح' });
@@ -81,7 +78,6 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
         await createLesson(payload);
         showToast({ type: 'success', title: 'تمت إضافة الدرس بنجاح' });
       }
-
       resetForm();
       await onRefresh();
     } catch (error) {
@@ -89,7 +85,7 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
       showToast({ 
         type: 'error', 
         title: 'حدث خطأ', 
-        message: error.message || 'فشل في حفظ الدرس. تأكد من صحة البيانات.' 
+        message: error.message || 'فشل في حفظ الدرس.' 
       });
     } finally {
       setLoading(false);
@@ -104,6 +100,7 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
       video_url: lesson.video_url || '',
       lesson_pdf_url: lesson.lesson_pdf_url || '',
       exam_pdf_url: lesson.exam_pdf_url || '',
+      homework_pdf_url: lesson.homework_pdf_url || '', // ✅
       description: lesson.description || '',
     });
   };
@@ -134,19 +131,23 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
               {editingLessonId ? 'تعديل الدرس' : 'إضافة درس جديد'}
             </h3>
             <p className="mt-1 text-sm text-gray-400">
-              أضف روابط الفيديو وملفات الشرح والامتحان.
+              أضف روابط الفيديو وملفات الشرح والامتحان والواجب.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" dir="rtl">
-            {/* الوحدة - مهم جداً هنا */}
+            {/* الوحدة */}
             <div>
               <label className="mb-2 block text-sm text-gray-300">الوحدة الدراسية</label>
               <select
                 value={form.unit_id}
                 onChange={(e) => setForm({ ...form, unit_id: e.target.value })}
-                disabled={validUnits.length === 0} // تعطيل الخيارات إذا لم توجد وحدات
-                className={`w-full rounded-2xl border bg-black/30 px-4 py-3 text-white outline-none focus:border-[#D4AF37]/40 ${validUnits.length === 0 ? 'border-red-500/50 cursor-not-allowed opacity-50' : 'border-white/10'}`}
+                disabled={validUnits.length === 0}
+                className={`w-full rounded-2xl border bg-black/30 px-4 py-3 text-white outline-none focus:border-[#D4AF37]/40 ${
+                  validUnits.length === 0 
+                    ? 'border-red-500/50 cursor-not-allowed opacity-50' 
+                    : 'border-white/10'
+                }`}
               >
                 <option value="" className="bg-[#0B1120]">اختر الوحدة</option>
                 {validUnits.map((unit) => (
@@ -157,7 +158,7 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
               </select>
               {validUnits.length === 0 && (
                 <p className="mt-1 text-xs text-red-400">
-                  يرجى إضافة وحدات دراسية أولاً لتتمكن من إنشاء دروس.
+                  يرجى إضافة وحدات دراسية أولاً.
                 </p>
               )}
             </div>
@@ -215,6 +216,21 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
                 type="text"
                 value={form.exam_pdf_url}
                 onChange={(e) => setForm({ ...form, exam_pdf_url: e.target.value })}
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#D4AF37]/40"
+                placeholder="https://...pdf"
+              />
+            </div>
+
+            {/* ✅ PDF الواجب - الجديد */}
+            <div>
+              <label className="mb-2 flex items-center justify-end gap-2 text-sm text-gray-300">
+                رابط ملف الواجب (PDF)
+                <BookMarked size={14} className="text-orange-400" />
+              </label>
+              <input
+                type="text"
+                value={form.homework_pdf_url}
+                onChange={(e) => setForm({ ...form, homework_pdf_url: e.target.value })}
                 className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none focus:border-[#D4AF37]/40"
                 placeholder="https://...pdf"
               />
@@ -356,6 +372,18 @@ const LessonsManager = ({ lessons, units, onRefresh }) => {
                       >
                         <FileText size={14} />
                         ملف الامتحان
+                      </a>
+                    )}
+                    {/* ✅ زر الواجب الجديد */}
+                    {lesson.homework_pdf_url && (
+                      <a
+                        href={lesson.homework_pdf_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-xl bg-orange-500/10 px-3 py-2 text-xs font-bold text-orange-300 transition hover:bg-orange-500/20"
+                      >
+                        <BookMarked size={14} />
+                        ملف الواجب
                       </a>
                     )}
                   </div>

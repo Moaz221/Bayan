@@ -51,50 +51,62 @@ const TeacherShowcase = () => (
     className="relative flex items-end justify-center"
     style={{ width: 480, height: 600 }}
   >
+    {/* الإطار العربي - محراب بسيط وأنيق */}
     <motion.div
       className="absolute pointer-events-none"
       style={{
-        inset: '-30px',
-        background: 'radial-gradient(ellipse at 50% 55%, rgba(212,175,55,0.3) 0%, rgba(212,175,55,0.1) 40%, transparent 70%)',
-        filter: 'blur(40px)',
-        zIndex: 0,
+        inset: '-15px',
+        borderRadius: '50% 50% 0 0',
+        border: '3px solid',
+        borderImage: 'linear-gradient(135deg, rgba(212,175,55,0.8), rgba(212,175,55,0.4), rgba(212,175,55,0.8)) 1',
+        zIndex: 2,
       }}
-      animate={{ opacity: [0.6, 1, 0.6], scale: [0.95, 1.05, 0.95] }}
-      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+      animate={{ opacity: [0.7, 1, 0.7] }}
+      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
     />
 
+    {/* الحد الداخلي للإطار */}
     <motion.div
       className="absolute pointer-events-none"
       style={{
-        width: 450, height: 450, top: '48%', left: '50%', translateX: '-50%', translateY: '-50%',
-        borderRadius: '50%',
-        background: 'conic-gradient(from 0deg, rgba(212,175,55,0.0) 0deg, rgba(212,175,55,0.18) 30deg, rgba(212,175,55,0.0) 60deg, rgba(212,175,55,0.15) 120deg, rgba(212,175,55,0.0) 180deg, rgba(212,175,55,0.18) 240deg, rgba(212,175,55,0.0) 300deg, rgba(212,175,55,0.15) 360deg)',
-        filter: 'blur(20px)',
+        inset: '-12px',
+        borderRadius: '50% 50% 0 0',
+        border: '1px solid rgba(212,175,55,0.3)',
         zIndex: 1,
       }}
-      animate={{ rotate: 360 }}
-      transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
     />
 
+    {/* صورة المدرس بحجمها الأصلي مع Gradient Mask في الأسفل */}
     <motion.div
-      className="absolute pointer-events-none rounded-full border border-amber-500/10"
-      style={{ width: 500, height: 500, top: '50%', left: '50%', translateX: '-50%', translateY: '-50%' }}
-      animate={{ rotate: 360 }}
-      transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-    />
-
-    <motion.img
-      src={teacherImage}
-      alt="الأستاذ إسماعيل رمضان"
-      className="relative select-none object-contain"
+      className="relative z-3"
       style={{
-        width: '100%', height: '100%', objectPosition: 'center bottom', zIndex: 3,
-        filter: 'drop-shadow(0 25px 60px rgba(0,0,0,0.85)) drop-shadow(0 0 30px rgba(212,175,55,0.3))',
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: '0 0 8px 8px',
+        // Gradient mask يخفي الجزء المقصوص ويدمجه بسلاسة
+        WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0.6) 95%, rgba(0,0,0,0) 100%)',
+        maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 85%, rgba(0,0,0,0.6) 95%, rgba(0,0,0,0) 100%)',
       }}
-      animate={{ y: [0, -10, 0] }}
-      transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-    />
+    >
+      <motion.img
+        src={teacherImage}
+        alt="الأستاذ إسماعيل رمضان"
+        className="relative select-none object-contain"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectPosition: 'center bottom',
+          zIndex: 3,
+          filter: 'drop-shadow(0 25px 60px rgba(0,0,0,0.85)) drop-shadow(0 0 30px rgba(212,175,55,0.3))',
+        }}
+        animate={{ y: [0, -10, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+      />
+    </motion.div>
 
+    {/* بطاقة الخبرة */}
     <motion.div
       initial={{ opacity: 0, x: -50 }}
       animate={{ opacity: 1, x: 0 }}
@@ -111,6 +123,7 @@ const TeacherShowcase = () => (
       </div>
     </motion.div>
 
+    {/* بطاقة الطلاب */}
     <motion.div
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
@@ -127,6 +140,7 @@ const TeacherShowcase = () => (
       </div>
     </motion.div>
 
+    {/* بطاقة الاعتماد */}
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
