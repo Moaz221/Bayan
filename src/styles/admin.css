@@ -1,0 +1,38 @@
+:root {
+  color-scheme: dark;
+}
+
+.admin-sidebar {
+  min-height: 100vh;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-sidebar-link {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.admin-sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.admin-topbar {
+  backdrop-filter: blur(16px);
+}
+
+.admin-main {
+  max-width: 1440px;
+  margin-inline: auto;
+}
+
+.admin-table-section table th,
+.admin-table-section table td {
+  text-align: right;
+}
+
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
