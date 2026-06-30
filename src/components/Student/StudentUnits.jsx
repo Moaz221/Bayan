@@ -14,114 +14,81 @@ import EmptyState from '../shared/EmptyState';
 const TERM_LABELS = { 1: 'الترم الأول', 2: 'الترم الثاني' };
 
 // ═══════════════════════════════════════════════════════
-// 🎬 VIDEO PLAYER MODAL
+// 🎬 INLINE VIDEO PLAYER (يفتح في نفس الشاشة تحت الدرس)
 // ═══════════════════════════════════════════════════════
-const VideoModal = ({ videoUrl, lessonTitle, onClose }) => {
-  // تحويل الـ URL لـ embed format
-  const getEmbedUrl = (url) => {
-    if (!url) return '';
+const getEmbedUrl = (url) => {
+  if (!url) return '';
 
-    // YouTube
-    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const youtubeMatch = url.match(youtubeRegex);
-    if (youtubeMatch) {
-      return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&rel=0&modestbranding=1`;
+  // YouTube
+  const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const youtubeMatch = url.match(youtubeRegex);
+  if (youtubeMatch) {
+    return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&rel=0&modestbranding=1`;
+  }
+
+  // Vimeo
+  const vimeoRegex = /vimeo\.com\/(\d+)/;
+  const vimeoMatch = url.match(vimeoRegex);
+  if (vimeoMatch) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+  }
+
+  // Google Drive
+  if (url.includes('drive.google.com')) {
+    const driveId = url.match(/[-\w]{25,}/);
+    if (driveId) {
+      return `https://drive.google.com/file/d/${driveId[0]}/preview`;
     }
+  }
 
-    // Vimeo
-    const vimeoRegex = /vimeo\.com\/(\d+)/;
-    const vimeoMatch = url.match(vimeoRegex);
-    if (vimeoMatch) {
-      return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
-    }
+  return url; // direct video link
+};
 
-    // Google Drive
-    if (url.includes('drive.google.com')) {
-      const driveId = url.match(/[-\w]{25,}/);
-      if (driveId) {
-        return `https://drive.google.com/file/d/${driveId[0]}/preview`;
-      }
-    }
-
-    return url; // direct video link
-  };
-
+const InlineVideoPlayer = ({ videoUrl, lessonTitle, onClose }) => {
   const embedUrl = getEmbedUrl(videoUrl);
 
-  // Close on ESC
-  useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-md p-4"
-        dir="rtl"
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 30 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 30 }}
-          transition={{ duration: 0.3 }}
-          onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-6xl"
-        >
-          {/* Header */}
-          <div className="mb-4 flex items-center justify-between">
-            <button
-              onClick={onClose}
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white transition hover:bg-white/10"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="flex items-center gap-3 text-right">
-              <div>
-                <p className="text-xs text-[#D4AF37] flex items-center justify-end gap-1.5">
-                  <Sparkles size={12} />
-                  جاري التشغيل
-                </p>
-                <h3 className="text-lg font-bold text-white">{lessonTitle}</h3>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20">
-                <Video size={20} className="text-red-300" />
-              </div>
-            </div>
-          </div>
-
-          {/* Video Container */}
-          <div className="relative aspect-video w-full overflow-hidden rounded-3xl border border-white/10 bg-black shadow-2xl shadow-[#D4AF37]/10">
-            {embedUrl ? (
-              <iframe
-                src={embedUrl}
-                title={lessonTitle}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="absolute inset-0 h-full w-full"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                لا يمكن تشغيل هذا الفيديو
-              </div>
-            )}
-          </div>
-
-          {/* Hint */}
-          <p className="mt-4 text-center text-xs text-gray-500">
-            اضغط <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-[10px]">ESC</kbd> للخروج
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.25 }}
+      className="overflow-hidden"
+    >
+      <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-3" dir="rtl">
+        {/* Header صغير فوق الفيديو */}
+        <div className="mb-2 flex items-center justify-between">
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white transition hover:bg-white/20"
+            aria-label="إغلاق الفيديو"
+          >
+            <X size={16} />
+          </button>
+          <p className="flex items-center gap-1.5 text-xs font-bold text-[#D4AF37]">
+            <Sparkles size={12} />
+            {lessonTitle}
           </p>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        </div>
+
+        {/* الفيديو - حجم متوسط يناسب الموبايل، نفس الشاشة */}
+        <div className="relative mx-auto w-full max-w-md aspect-video overflow-hidden rounded-xl border border-white/10 bg-black">
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              title={lessonTitle}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="absolute inset-0 h-full w-full"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
+              لا يمكن تشغيل هذا الفيديو
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
@@ -266,7 +233,8 @@ const UnitDetail = ({ units, profile }) => {
   const { unitId } = useParams();
   const [lessons, setLessons] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeVideo, setActiveVideo] = useState(null); // { url, title }
+  // بدل ما نفتح Modal، بنفتح الفيديو جوه نفس كارت الدرس
+  const [playingLessonId, setPlayingLessonId] = useState(null);
 
   const unit = (units || []).find((u) => String(u.id) === String(unitId));
 
@@ -279,91 +247,97 @@ const UnitDetail = ({ units, profile }) => {
       .finally(() => setLoading(false));
   }, [unitId, profile]);
 
+  // لو غيّرنا الدرس/الوحدة نقفل أي فيديو شغال
+  useEffect(() => {
+    setPlayingLessonId(null);
+  }, [unitId]);
+
   if (loading) return <LoadingScreen text="جاري تحميل الدروس..." />;
 
   return (
-    <>
-      <div className="space-y-6" dir="rtl">
-        {/* Breadcrumb */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-2 text-sm"
+    <div className="space-y-6" dir="rtl">
+      {/* Breadcrumb */}
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex items-center gap-2 text-sm"
+      >
+        <Link 
+          to="/dashboard/units" 
+          className="flex items-center gap-1 text-gray-400 transition hover:text-[#D4AF37]"
         >
-          <Link 
-            to="/dashboard/units" 
-            className="flex items-center gap-1 text-gray-400 transition hover:text-[#D4AF37]"
-          >
-            <ChevronRight size={14} />
-            الوحدات
-          </Link>
-          <span className="text-gray-600">/</span>
-          <span className="font-bold text-white">{unit?.title}</span>
-        </motion.div>
+          <ChevronRight size={14} />
+          الوحدات
+        </Link>
+        <span className="text-gray-600">/</span>
+        <span className="font-bold text-white">{unit?.title}</span>
+      </motion.div>
 
-        {/* Unit Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a1f2e] via-[#0f1420] to-[#0a0e18] p-6"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2">
-              {unit?.term && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-300">
-                  <CalendarDays size={12} />
-                  {TERM_LABELS[unit.term]}
-                </span>
-              )}
-              {unit?.is_final_review && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 py-1 text-xs font-bold text-[#D4AF37]">
-                  <CheckCircle2 size={12} />
-                  مراجعة نهائية
-                </span>
-              )}
+      {/* Unit Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a1f2e] via-[#0f1420] to-[#0a0e18] p-6"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap gap-2">
+            {unit?.term && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-300">
+                <CalendarDays size={12} />
+                {TERM_LABELS[unit.term]}
+              </span>
+            )}
+            {unit?.is_final_review && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 py-1 text-xs font-bold text-[#D4AF37]">
+                <CheckCircle2 size={12} />
+                مراجعة نهائية
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 text-right">
+            <div>
+              <h2 className="text-2xl font-bold text-white md:text-3xl">{unit?.title}</h2>
+              <p className="mt-1 text-sm text-gray-400">{lessons?.length || 0} درس متاح</p>
             </div>
-
-            <div className="flex items-center gap-3 text-right">
-              <div>
-                <h2 className="text-2xl font-bold text-white md:text-3xl">{unit?.title}</h2>
-                <p className="mt-1 text-sm text-gray-400">{lessons?.length || 0} درس متاح</p>
-              </div>
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#AA7C11] shadow-lg shadow-[#D4AF37]/30">
-                <BookOpen size={24} className="text-black" />
-              </div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#AA7C11] shadow-lg shadow-[#D4AF37]/30">
+              <BookOpen size={24} className="text-black" />
             </div>
           </div>
-        </motion.div>
+        </div>
+      </motion.div>
 
-        {/* Telegram Card */}
-        {unit?.telegram_group_url && (
-          <motion.a
-            href={unit.telegram_group_url}
-            target="_blank"
-            rel="noreferrer"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="group flex items-center justify-between gap-3 rounded-2xl border border-sky-500/30 bg-gradient-to-l from-sky-500/15 to-sky-500/5 p-5 transition hover:border-sky-500/50 hover:shadow-lg hover:shadow-sky-500/10"
-          >
-            <ArrowLeft className="text-sky-300 transition group-hover:-translate-x-1" size={20} />
-            <div className="flex flex-1 items-center gap-3 justify-end">
-              <div className="text-right">
-                <p className="text-base font-bold text-white">جروب التيليجرام للوحدة</p>
-                <p className="mt-0.5 text-xs text-sky-300">انضم للتواصل مع زملائك والأستاذ</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/20 transition group-hover:scale-110">
-                <Send size={20} className="text-sky-300" />
-              </div>
+      {/* Telegram Card */}
+      {unit?.telegram_group_url && (
+        <motion.a
+          href={unit.telegram_group_url}
+          target="_blank"
+          rel="noreferrer"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="group flex items-center justify-between gap-3 rounded-2xl border border-sky-500/30 bg-gradient-to-l from-sky-500/15 to-sky-500/5 p-5 transition hover:border-sky-500/50 hover:shadow-lg hover:shadow-sky-500/10"
+        >
+          <ArrowLeft className="text-sky-300 transition group-hover:-translate-x-1" size={20} />
+          <div className="flex flex-1 items-center gap-3 justify-end">
+            <div className="text-right">
+              <p className="text-base font-bold text-white">جروب التيليجرام للوحدة</p>
+              <p className="mt-0.5 text-xs text-sky-300">انضم للتواصل مع زملائك والأستاذ</p>
             </div>
-          </motion.a>
-        )}
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/20 transition group-hover:scale-110">
+              <Send size={20} className="text-sky-300" />
+            </div>
+          </div>
+        </motion.a>
+      )}
 
-        {/* Lessons */}
-        {!lessons?.length ? (
-          <EmptyState title="لا توجد دروس" description="لم يُضف الأستاذ دروساً لهذه الوحدة بعد." />
-        ) : (
-          <div className="space-y-3">
-            {lessons.map((lesson, i) => (
+      {/* Lessons */}
+      {!lessons?.length ? (
+        <EmptyState title="لا توجد دروس" description="لم يُضف الأستاذ دروساً لهذه الوحدة بعد." />
+      ) : (
+        <div className="space-y-3">
+          {lessons.map((lesson, i) => {
+            const isPlaying = playingLessonId === lesson.id;
+            return (
               <motion.div
                 key={lesson.id}
                 initial={{ opacity: 0, y: 15 }}
@@ -401,23 +375,24 @@ const UnitDetail = ({ units, profile }) => {
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap gap-2 md:justify-end">
-                    {/* فيديو الشرح - يفتح Modal */}
+                    {/* فيديو الشرح - يفتح جوه نفس الشاشة تحت الدرس */}
                     {lesson.video_url && (
                       <button
                         onClick={() => {
-                          if (lesson.isAccessible) {
-                            setActiveVideo({ url: lesson.video_url, title: lesson.title });
-                          }
+                          if (!lesson.isAccessible) return;
+                          setPlayingLessonId(isPlaying ? null : lesson.id);
                         }}
                         disabled={!lesson.isAccessible}
                         className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
                           lesson.isAccessible
-                            ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                            ? isPlaying
+                              ? 'bg-red-500/20 text-red-200'
+                              : 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
                             : 'cursor-not-allowed bg-white/5 text-gray-600'
                         }`}
                       >
                         {lesson.isAccessible ? <Play size={13} /> : <Lock size={13} />}
-                        مشاهدة الشرح
+                        {isPlaying ? 'إخفاء الفيديو' : 'مشاهدة الشرح'}
                       </button>
                     )}
 
@@ -473,21 +448,23 @@ const UnitDetail = ({ units, profile }) => {
                     )}
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
 
-      {/* Video Modal */}
-      {activeVideo && (
-        <VideoModal
-          videoUrl={activeVideo.url}
-          lessonTitle={activeVideo.title}
-          onClose={() => setActiveVideo(null)}
-        />
+                {/* الفيديو يفتح هنا جوه الكارت نفسه - مش Modal منفصل */}
+                <AnimatePresence>
+                  {isPlaying && lesson.isAccessible && (
+                    <InlineVideoPlayer
+                      videoUrl={lesson.video_url}
+                      lessonTitle={lesson.title}
+                      onClose={() => setPlayingLessonId(null)}
+                    />
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
+        </div>
       )}
-    </>
+    </div>
   );
 };
 
