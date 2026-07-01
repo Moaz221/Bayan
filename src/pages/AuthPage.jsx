@@ -133,18 +133,23 @@ const AuthPage = () => {
             throw new Error('يجب اختيار صف دراسي صحيح');
           }
 
-          const { error: profileError } = await supabase.from('profiles').insert([
-            {
-              id: data.user.id,
-              full_name: formData.fullName,
-              phone: formData.phone,
-              grade_level: gradeNumber,
-              role: 'student',
-              is_active: false,
-              subscription_status: 'pending',
-              access_mode: 'full_grade',
-            },
-          ]);
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert(
+              [
+                {
+                  id: data.user.id,
+                  full_name: formData.fullName,
+                  phone: formData.phone,
+                  grade_level: gradeNumber,
+                  role: 'student',
+                  is_active: false,
+                  subscription_status: 'pending',
+                  access_mode: 'full_grade',
+                },
+              ],
+              { onConflict: 'id' },
+            );
 
           if (profileError) throw profileError;
 
