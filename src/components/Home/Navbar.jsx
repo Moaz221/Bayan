@@ -3,15 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Menu, X, MessageCircle, Sparkles } from 'lucide-react';
 import BayanIcon from '../../assets/Bayan-Icon.png';
-
-// ══ Constants ══
-// مصدر واحد لرابط الواتساب - يتستخدم في الديسكتوب والموبايل من نفس المكان
-const WHATSAPP_NUMBER = '201153463139';
-const WHATSAPP_MESSAGE =
-  'السلام عليكم ورحمة الله وبركاته يا أستاذ إسماعيل. أرغب في الاشتراك بـ [الصف الأول الثانوي] - [الترم الأول]. شكرا';
-const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-  WHATSAPP_MESSAGE
-)}`;
+import { WHATSAPP_LINK } from '../../lib/contact';
 
 const NAVBAR_HEIGHT = 90; // px
 const SCROLL_THRESHOLD = 30; // px - بعده يبقى الـ navbar "scrolled"

@@ -10,8 +10,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getLessonsWithAccess } from '../../lib/student';
 import LoadingScreen from '../shared/LoadingScreen';
 import EmptyState from '../shared/EmptyState';
+import ProfileBg from '../../assets/profile_background.jpg';
 
 const TERM_LABELS = { 1: 'الترم الأول', 2: 'الترم الثاني' };
+
+// ═══════════════════════════════════════════════════════
+// 🖼️ خلفية زخرفية خفيفة جدًا - تظهر شكلها بس من غير ما تشتت
+// ═══════════════════════════════════════════════════════
+const PageBackdrop = () => (
+  <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    <img
+      src={ProfileBg}
+      alt=""
+      className="absolute inset-0 h-full w-full object-cover object-center opacity-40 blur-sm"
+    />
+    <div className="absolute inset-0 bg-gradient-to-b from-[#05070A]/30 via-[#05070A]/60 to-[#05070A]/95" />
+  </div>
+);
 
 // ═══════════════════════════════════════════════════════
 // 🎬 INLINE VIDEO PLAYER (يفتح في نفس الشاشة تحت الدرس)
@@ -93,6 +108,71 @@ const InlineVideoPlayer = ({ videoUrl, lessonTitle, onClose }) => {
 };
 
 // ═══════════════════════════════════════════════════════
+// 🔘 زر فعل الدرس - موحّد الشكل لكل الأزرار الأربعة
+// ═══════════════════════════════════════════════════════
+const LESSON_BTN_BASE = 'flex flex-col items-center justify-center gap-1.5 rounded-xl border py-3 text-center transition';
+const LESSON_BTN_IDLE = 'border-white/5 bg-white/[0.03] text-gray-300';
+const LESSON_BTN_DISABLED = 'cursor-not-allowed border-white/5 bg-white/[0.01] text-gray-600';
+
+// كل الألوان مكتوبة بالكامل كنص ثابت عشان Tailwind يقدر يكتشفها وقت الـ build
+// (لو كتبناها بالـ template concatenation مش هتظهر في الإنتاج)
+const COLOR_VARIANTS = {
+  red: {
+    hover: 'hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-300',
+    active: 'border-red-500/30 bg-red-500/20 text-red-200',
+  },
+  blue: {
+    hover: 'hover:border-blue-500/20 hover:bg-blue-500/10 hover:text-blue-300',
+    active: 'border-blue-500/30 bg-blue-500/20 text-blue-200',
+  },
+  emerald: {
+    hover: 'hover:border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-300',
+    active: 'border-emerald-500/30 bg-emerald-500/20 text-emerald-200',
+  },
+  orange: {
+    hover: 'hover:border-orange-500/20 hover:bg-orange-500/10 hover:text-orange-300',
+    active: 'border-orange-500/30 bg-orange-500/20 text-orange-200',
+  },
+};
+
+const LessonActionButton = ({ icon: Icon, label, accessible, active, color, onClick, href }) => {
+  const variant = COLOR_VARIANTS[color];
+  const stateClass = !accessible
+    ? LESSON_BTN_DISABLED
+    : active
+    ? variant.active
+    : `${LESSON_BTN_IDLE} ${variant.hover}`;
+  const className = `${LESSON_BTN_BASE} ${stateClass}`;
+
+  const content = (
+    <>
+      {accessible ? <Icon size={17} /> : <Lock size={15} />}
+      <span className="text-[11px] font-bold">{label}</span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a
+        href={accessible ? href : '#'}
+        target={accessible ? '_blank' : '_self'}
+        rel="noreferrer"
+        onClick={(e) => { if (!accessible) e.preventDefault(); }}
+        className={className}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <button onClick={accessible ? onClick : undefined} disabled={!accessible} className={className}>
+      {content}
+    </button>
+  );
+};
+
+// ═══════════════════════════════════════════════════════
 // 📚 UNITS LIST
 // ═══════════════════════════════════════════════════════
 const UnitsList = ({ units }) => {
@@ -110,8 +190,18 @@ const UnitsList = ({ units }) => {
         animate={{ opacity: 1, y: 0 }}
         className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a1f2e] via-[#0f1420] to-[#0a0e18] p-6"
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#D4AF37]/10">
+              <BookOpen size={22} className="text-[#D4AF37]" />
+            </div>
+            <div className="text-right">
+              <h2 className="text-2xl font-bold text-white">الوحدات والدروس</h2>
+              <p className="mt-1 text-sm text-gray-400">{filtered.length} وحدة متاحة</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {[
               { value: 'all', label: 'الكل' },
               { value: '1', label: 'الترم الأول' },
@@ -120,7 +210,7 @@ const UnitsList = ({ units }) => {
               <button
                 key={t.value}
                 onClick={() => setTermFilter(t.value)}
-                className={`rounded-xl px-5 py-2.5 text-sm font-bold transition ${
+                className={`shrink-0 rounded-xl px-5 py-2.5 text-sm font-bold transition ${
                   termFilter === t.value
                     ? 'bg-gradient-to-r from-[#D4AF37] to-[#AA7C11] text-black shadow-lg shadow-[#D4AF37]/30'
                     : 'bg-white/5 text-gray-300 hover:bg-white/10'
@@ -129,15 +219,6 @@ const UnitsList = ({ units }) => {
                 {t.label}
               </button>
             ))}
-          </div>
-          <div className="flex items-center gap-3 text-right">
-            <div>
-              <h2 className="text-2xl font-bold text-white">الوحدات والدروس</h2>
-              <p className="mt-1 text-sm text-gray-400">{filtered.length} وحدة متاحة</p>
-            </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D4AF37]/10">
-              <BookOpen size={22} className="text-[#D4AF37]" />
-            </div>
           </div>
         </div>
       </motion.div>
@@ -279,8 +360,18 @@ const UnitDetail = ({ units, profile }) => {
         animate={{ opacity: 1, y: 0 }}
         className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a1f2e] via-[#0f1420] to-[#0a0e18] p-6"
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#AA7C11] shadow-lg shadow-[#D4AF37]/30">
+              <BookOpen size={24} className="text-black" />
+            </div>
+            <div className="text-right">
+              <h2 className="text-2xl font-bold text-white md:text-3xl">{unit?.title}</h2>
+              <p className="mt-1 text-sm text-gray-400">{lessons?.length || 0} درس متاح</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t border-white/5 pt-4">
             {unit?.term && (
               <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs font-bold text-violet-300">
                 <CalendarDays size={12} />
@@ -293,16 +384,6 @@ const UnitDetail = ({ units, profile }) => {
                 مراجعة نهائية
               </span>
             )}
-          </div>
-
-          <div className="flex items-center gap-3 text-right">
-            <div>
-              <h2 className="text-2xl font-bold text-white md:text-3xl">{unit?.title}</h2>
-              <p className="mt-1 text-sm text-gray-400">{lessons?.length || 0} درس متاح</p>
-            </div>
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#AA7C11] shadow-lg shadow-[#D4AF37]/30">
-              <BookOpen size={24} className="text-black" />
-            </div>
           </div>
         </div>
       </motion.div>
@@ -349,104 +430,71 @@ const UnitDetail = ({ units, profile }) => {
                     : 'border-white/5 bg-white/[0.01]'
                 }`}
               >
-                <div className="flex flex-col gap-4 md:flex-row-reverse md:items-center md:justify-between">
-                  {/* Title */}
-                  <div className="flex items-start gap-3 text-right md:flex-1">
-                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
-                      lesson.isAccessible 
-                        ? 'bg-[#D4AF37]/10 text-[#D4AF37]' 
-                        : 'bg-white/5 text-gray-600'
-                    }`}>
-                      <span className="font-bold">{i + 1}</span>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-lg font-bold text-white">{lesson.title}</h4>
-                      {!lesson.isAccessible ? (
-                        <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-400">
-                          <Lock size={10} /> مقفول — يحتاج اشتراك
-                        </span>
-                      ) : lesson.description ? (
-                        <p className="mt-1 text-sm leading-6 text-gray-400 line-clamp-2">
-                          {lesson.description}
-                        </p>
-                      ) : null}
-                    </div>
+                {/* رأس الدرس: الرقم + العنوان + الوصف */}
+                <div className="flex items-start gap-3 text-right">
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
+                    lesson.isAccessible 
+                      ? 'bg-[#D4AF37]/10 text-[#D4AF37]' 
+                      : 'bg-white/5 text-gray-600'
+                  }`}>
+                    <span className="font-bold">{i + 1}</span>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-2 md:justify-end">
-                    {/* فيديو الشرح - يفتح جوه نفس الشاشة تحت الدرس */}
-                    {lesson.video_url && (
-                      <button
-                        onClick={() => {
-                          if (!lesson.isAccessible) return;
-                          setPlayingLessonId(isPlaying ? null : lesson.id);
-                        }}
-                        disabled={!lesson.isAccessible}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
-                          lesson.isAccessible
-                            ? isPlaying
-                              ? 'bg-red-500/20 text-red-200'
-                              : 'bg-red-500/10 text-red-300 hover:bg-red-500/20'
-                            : 'cursor-not-allowed bg-white/5 text-gray-600'
-                        }`}
-                      >
-                        {lesson.isAccessible ? <Play size={13} /> : <Lock size={13} />}
-                        {isPlaying ? 'إخفاء الفيديو' : 'مشاهدة الشرح'}
-                      </button>
-                    )}
-
-                    {lesson.lesson_pdf_url && (
-                      <a
-                        href={lesson.isAccessible ? lesson.lesson_pdf_url : '#'}
-                        target={lesson.isAccessible ? '_blank' : '_self'}
-                        rel="noreferrer"
-                        onClick={(e) => { if (!lesson.isAccessible) e.preventDefault(); }}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
-                          lesson.isAccessible
-                            ? 'bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'
-                            : 'cursor-not-allowed bg-white/5 text-gray-600'
-                        }`}
-                      >
-                        {lesson.isAccessible ? <FileText size={13} /> : <Lock size={13} />}
-                        الشرح
-                      </a>
-                    )}
-
-                    {lesson.exam_pdf_url && (
-                      <a
-                        href={lesson.isAccessible ? lesson.exam_pdf_url : '#'}
-                        target={lesson.isAccessible ? '_blank' : '_self'}
-                        rel="noreferrer"
-                        onClick={(e) => { if (!lesson.isAccessible) e.preventDefault(); }}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
-                          lesson.isAccessible
-                            ? 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
-                            : 'cursor-not-allowed bg-white/5 text-gray-600'
-                        }`}
-                      >
-                        {lesson.isAccessible ? <FileText size={13} /> : <Lock size={13} />}
-                        الامتحان
-                      </a>
-                    )}
-
-                    {lesson.homework_pdf_url && (
-                      <a
-                        href={lesson.isAccessible ? lesson.homework_pdf_url : '#'}
-                        target={lesson.isAccessible ? '_blank' : '_self'}
-                        rel="noreferrer"
-                        onClick={(e) => { if (!lesson.isAccessible) e.preventDefault(); }}
-                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
-                          lesson.isAccessible
-                            ? 'bg-orange-500/10 text-orange-300 hover:bg-orange-500/20'
-                            : 'cursor-not-allowed bg-white/5 text-gray-600'
-                        }`}
-                      >
-                        {lesson.isAccessible ? <BookMarked size={13} /> : <Lock size={13} />}
-                        الواجب
-                      </a>
-                    )}
+                  <div className="flex-1">
+                    <h4 className="text-lg font-bold text-white">{lesson.title}</h4>
+                    {!lesson.isAccessible ? (
+                      <span className="mt-1 inline-flex items-center gap-1 text-xs text-amber-400">
+                        <Lock size={10} /> مقفول — يحتاج اشتراك
+                      </span>
+                    ) : lesson.description ? (
+                      <p className="mt-1 text-sm leading-6 text-gray-400 line-clamp-2">
+                        {lesson.description}
+                      </p>
+                    ) : null}
                   </div>
+                </div>
+
+                {/* شبكة أزرار الدرس - 2x2 منظمة وواضحة */}
+                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/5 pt-4 sm:grid-cols-4">
+                  {lesson.video_url && (
+                    <LessonActionButton
+                      icon={Play}
+                      label={isPlaying ? 'إخفاء الفيديو' : 'مشاهدة الشرح'}
+                      accessible={lesson.isAccessible}
+                      active={isPlaying}
+                      onClick={() => setPlayingLessonId(isPlaying ? null : lesson.id)}
+                      color="red"
+                    />
+                  )}
+
+                  {lesson.lesson_pdf_url && (
+                    <LessonActionButton
+                      icon={FileText}
+                      label="الشرح"
+                      accessible={lesson.isAccessible}
+                      href={lesson.lesson_pdf_url}
+                      color="blue"
+                    />
+                  )}
+
+                  {lesson.exam_pdf_url && (
+                    <LessonActionButton
+                      icon={FileText}
+                      label="الامتحان"
+                      accessible={lesson.isAccessible}
+                      href={lesson.exam_pdf_url}
+                      color="emerald"
+                    />
+                  )}
+
+                  {lesson.homework_pdf_url && (
+                    <LessonActionButton
+                      icon={BookMarked}
+                      label="الواجب"
+                      accessible={lesson.isAccessible}
+                      href={lesson.homework_pdf_url}
+                      color="orange"
+                    />
+                  )}
                 </div>
 
                 {/* الفيديو يفتح هنا جوه الكارت نفسه - مش Modal منفصل */}
@@ -469,10 +517,15 @@ const UnitDetail = ({ units, profile }) => {
 };
 
 const StudentUnits = ({ units, profile }) => (
-  <Routes>
-    <Route index element={<UnitsList units={units} />} />
-    <Route path=":unitId" element={<UnitDetail units={units} profile={profile} />} />
-  </Routes>
+  <>
+    <PageBackdrop />
+    <div className="relative z-10">
+      <Routes>
+        <Route index element={<UnitsList units={units} />} />
+        <Route path=":unitId" element={<UnitDetail units={units} profile={profile} />} />
+      </Routes>
+    </div>
+  </>
 );
 
 export default StudentUnits;

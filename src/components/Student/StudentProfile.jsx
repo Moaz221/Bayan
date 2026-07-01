@@ -4,6 +4,8 @@ import {
   CheckCircle2, Clock, XCircle, Ban, Crown, Send, Sparkles,
   Mail, MessageSquare, Award
 } from 'lucide-react';
+import { WHATSAPP_LINK } from '../../lib/contact';
+import profileBackground from '../../assets/profile_background.jpg';
 
 const GRADE_LABELS = { 
   1: 'الصف الأول الثانوي', 
@@ -55,18 +57,25 @@ const StudentProfile = ({ profile }) => {
     : null;
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div
+      className="relative min-h-screen bg-cover bg-center bg-no-repeat"
+      dir="rtl"
+      style={{
+        backgroundImage: `url(${profileBackground})`,
+      }}
+    >
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
+      <div className="relative space-y-6 px-4 py-8 sm:px-6 lg:px-8 max-w-6xl mx-auto">
 
-      {/* ════════════════════════ HEADER CARD ════════════════════════ */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a1f2e] via-[#0f1420] to-[#0a0e18] p-8"
-      >
-        {/* تأثيرات الخلفية */}
+        {/* ════════════════════════ HEADER CARD ════════════════════════ */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl border border-white/20 bg-black/70 backdrop-blur-2xl p-8 shadow-2xl shadow-black/50"
+        >
+        <div className="absolute inset-0 bg-black/40" />
         <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-[#D4AF37]/10 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
-
         <div className="relative flex flex-col items-center gap-5 md:flex-row md:items-center md:justify-between">
           
           {/* البادج للحالة */}
@@ -120,7 +129,7 @@ const StudentProfile = ({ profile }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.01] p-6"
+        className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 shadow-black/20 shadow-inner"
       >
         <div className="mb-5 flex items-center justify-end gap-2">
           <h3 className="text-lg font-bold text-white">البيانات الشخصية</h3>
@@ -160,7 +169,7 @@ const StudentProfile = ({ profile }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.03] to-white/[0.01] p-6"
+        className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 shadow-black/20 shadow-inner"
       >
         <div className="mb-5 flex items-center justify-end gap-2">
           <h3 className="text-lg font-bold text-white">تفاصيل الاشتراك</h3>
@@ -294,7 +303,7 @@ const StudentProfile = ({ profile }) => {
           <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap gap-2">
               <a
-                href="https://wa.me/2010XXXXXXXX"
+                href={WHATSAPP_LINK}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-green-900/30 transition hover:scale-105"
@@ -319,6 +328,7 @@ const StudentProfile = ({ profile }) => {
           </div>
         </motion.div>
       )}
+      </div>
     </div>
   );
 };
@@ -330,8 +340,8 @@ const InfoCard = ({ icon: Icon, label, value, iconColor, iconBg, dir = 'rtl', hi
     whileHover={{ y: -2 }}
     className={`rounded-2xl border p-4 transition ${
       highlighted 
-        ? 'border-[#D4AF37]/25 bg-[#D4AF37]/5' 
-        : 'border-white/5 bg-black/20'
+        ? 'border-[#D4AF37]/25 bg-[#D4AF37]/10 text-white' 
+        : 'border-white/10 bg-black/40 text-white'
     }`}
   >
     <div className="flex items-start gap-3">

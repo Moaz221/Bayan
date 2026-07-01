@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Clock, Phone, CheckCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { WHATSAPP_LINK } from '../lib/contact';
 import loginBg from '../assets/Backgroun_login.png';
 
 const PendingApproval = () => {
@@ -97,7 +98,7 @@ const PendingApproval = () => {
 
         <div className="grid grid-cols-1 gap-3">
           <button
-            onClick={() => window.open('https://wa.me/2010XXXXXXXX', '_blank')}
+            onClick={() => window.open(WHATSAPP_LINK, '_blank')}
             className="w-full bg-[#25D366] hover:bg-[#1da851] text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-900/20 group"
           >
             <Phone size={20} /> تواصل عبر واتساب للتفعيل

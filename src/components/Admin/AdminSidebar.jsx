@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, BookOpen, PlaySquare, FileText, Wallet, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, PlaySquare, FileText, BarChart3, CreditCard } from 'lucide-react';
 
 const navItems = [
   { id: 'overview', label: 'نظرة عامة', icon: LayoutDashboard },
@@ -7,7 +7,7 @@ const navItems = [
   { id: 'units', label: 'إدارة الوحدات', icon: BookOpen },
   { id: 'lessons', label: 'إدارة الدروس', icon: PlaySquare },
   { id: 'exams', label: 'الامتحانات', icon: FileText },
-  { id: 'payments', label: 'المدفوعات والتفعيل', icon: Wallet },
+  { id: 'examResults', label: 'نتائج الامتحانات', icon: BarChart3 },
 ];
 
 const AdminSidebar = ({ activeTab, setActiveTab }) => {

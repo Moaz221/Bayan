@@ -312,6 +312,24 @@ export const getAllExams = async () => {
   return data || [];
 };
 
+export const getAllExamResults = async () => {
+  const { data, error } = await supabase
+    .from('student_exam_attempts')
+    .select(`
+      *,
+      exams ( id, title, scope_type, grade_level, term, lesson_id, unit_id ),
+      profiles:student_id ( id, full_name, phone, grade_level, subscription_status, is_active )
+    `)
+    .order('submitted_at', { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map((attempt) => ({
+    ...attempt,
+    student: attempt.profiles || null,
+    exam: attempt.exams || null,
+  }));
+};
+
 export const createExam = async (payload) => {
   const { data, error } = await supabase
     .from('exams')

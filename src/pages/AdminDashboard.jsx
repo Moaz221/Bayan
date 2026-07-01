@@ -4,6 +4,7 @@ import AdminSidebar from '../components/Admin/AdminSidebar';
 import AdminTopbar from '../components/Admin/AdminTopbar';
 import AdminOverview from '../components/Admin/AdminOverview';
 import ExamsManager from '../components/Admin/ExamsManager';
+import ExamResultsManager from '../components/Admin/ExamResultsManager';
 import StudentsTable from '../components/Admin/StudentsTable';
 import UnitsManager from '../components/Admin/UnitsManager';
 import LessonsManager from '../components/Admin/LessonsManager';
@@ -16,8 +17,9 @@ import {
   getAllStudents, 
   getAllUnits, 
   getAllPlans, 
-  getAllExams 
-} from '../lib/admin'; // ✅ هنا `..` مرة واحدة
+  getAllExams,
+  getAllExamResults,
+} from '../lib/admin'; // ✅ here
 import '../styles/admin.css';
 
 const AdminDashboard = () => {
@@ -28,18 +30,20 @@ const AdminDashboard = () => {
   const [lessons, setLessons] = useState([]);
   const [plans, setPlans] = useState([]);
   const [exams, setExams] = useState([]);
+  const [examResults, setExamResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsData, studentsData, unitsData, lessonsData, plansData, examsData] = await Promise.all([
+      const [statsData, studentsData, unitsData, lessonsData, plansData, examsData, examResultsData] = await Promise.all([
         getAdminStats(),
         getAllStudents(),
         getAllUnits(),
         getAllLessons(),
         getAllPlans(),
         getAllExams(),
+        getAllExamResults(),
       ]);
 
       setStats(statsData);
@@ -48,6 +52,7 @@ const AdminDashboard = () => {
       setLessons(lessonsData);
       setPlans(plansData);
       setExams(examsData);
+      setExamResults(examResultsData);
     } catch (error) {
       console.error(error);
       alert(error.message || 'حدث خطأ أثناء تحميل بيانات لوحة الإدارة');
@@ -74,15 +79,8 @@ const AdminDashboard = () => {
         return <ExamsManager exams={exams} units={units} lessons={lessons} onRefresh={loadDashboardData} />;
       case 'plans':
         return <PlansManager plans={plans} units={units} onRefresh={loadDashboardData} />;
-      case 'payments':
-        return (
-          <AdminSectionCard className="p-8 text-right">
-            <h3 className="text-2xl font-bold text-white">المدفوعات والتفعيل</h3>
-            <p className="mt-3 text-sm leading-7 text-gray-400">
-              لاحقًا سنضيف قسمًا واضحًا لتتبع التحويلات اليدوية وتفعيل الاشتراكات ومددها بسهولة.
-            </p>
-          </AdminSectionCard>
-        );
+      case 'examResults':
+        return <ExamResultsManager examResults={examResults} onRefresh={loadDashboardData} />;
       default:
         return <AdminOverview />;
     }

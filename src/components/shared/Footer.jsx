@@ -7,6 +7,7 @@ import {
   Phone,
 } from 'lucide-react';
 import BayanIcon from '../../assets/Bayan-Icon.png';
+import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from '../../lib/contact';
 
 /* ─────────────────────────────────────────────
    SEO: JSON-LD Structured Data (Organization)
@@ -18,18 +19,18 @@ const STRUCTURED_DATA = {
   alternateName: 'Bayan Arabic Platform',
   description:
     'منصة تعليمية متخصصة في اللغة العربية لطلاب المرحلة الثانوية والبكالوريا، مع شرح منظم ومتابعة مستمرة.',
-  url: 'https://bayan-platform.com',
-  logo: 'https://bayan-platform.com/bayan-icon.png',
+  url: 'https://bayan-gray.vercel.app',
+  logo: 'https://bayan-gray.vercel.app/Bayan-Icon.png',
   sameAs: [
     'https://t.me/Ismail_Ram',
     'https://www.tiktok.com/@bayan_arabic70?_r=1&_t=ZS-97eEsaXzn4m',
     'https://www.youtube.com/@ismalrmdn2498',
-    'https://wa.me/201153463139?text=السلام%20عليكم%20ورحمة%20الله%20وبركاته%20يا%20أستاذ%20إسماعيل.%20أرغب%20في%20الاشتراك%20بـ%20%5Bالصف%20الأول%20الثانوي%5D%20-%20%5Bالترم%20الأول%5D.%20شكرا',
+    WHATSAPP_LINK,
   ],
   contactPoint: [
     {
       '@type': 'ContactPoint',
-      telephone: '+20-10-0000-0000',
+      telephone: WHATSAPP_DISPLAY.replace(/\s+/g, ''),
       contactType: 'customer support',
       areaServed: 'EG',
       availableLanguage: 'Arabic',
@@ -111,6 +112,13 @@ const socialLinks = [
 ];
 
 const contactItems = [
+  {
+    title: 'واتساب',
+    value: WHATSAPP_DISPLAY,
+    href: WHATSAPP_LINK,
+    Icon: MessageCircle,
+    ariaLabel: 'تواصل معنا عبر واتساب',
+  },
   {
     title: 'العنوان',
     value: 'بني سويف – أهناسيا – المدينة – كوم الرمل البحري',

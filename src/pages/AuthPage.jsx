@@ -30,7 +30,7 @@ const AuthPage = () => {
     password: '',
     fullName: '',
     phone: '',
-    grade: '1',
+    grade: '',
     newPassword: '',
     confirmPassword: '',
   });
@@ -125,37 +125,47 @@ const AuthPage = () => {
 
         if (error) throw error;
 
-        if (data?.user) {
-          // ✅ تأكد إن grade_level رقم
-          const gradeNumber = Number(formData.grade);
-          
-          if (![1, 2, 3].includes(gradeNumber)) {
-            throw new Error('يجب اختيار صف دراسي صحيح');
-          }
-
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert(
-              [
-                {
-                  id: data.user.id,
-                  full_name: formData.fullName,
-                  phone: formData.phone,
-                  grade_level: gradeNumber,
-                  role: 'student',
-                  is_active: false,
-                  subscription_status: 'pending',
-                  access_mode: 'full_grade',
-                },
-              ],
-              { onConflict: 'id' },
-            );
-
-          if (profileError) throw profileError;
-
-          // ✅ يدخل الداشبورد على طول
-          navigate('/dashboard');
+        if (!data?.user) {
+          throw new Error('حدث خطأ غير متوقع أثناء إنشاء الحساب. حاول مرة أخرى.');
         }
+
+        // إذا لم يتم إنشاء جلسة مباشرةً، نطلب من المستخدم تأكيد البريد أولاً
+        if (!data?.session) {
+          setSuccessMsg('تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيد الحساب ثم عد وسجل الدخول.');
+          setAuthState('login');
+          setLoading(false);
+          return;
+        }
+
+        // ✅ تأكد إن grade_level رقم
+        const gradeNumber = Number(formData.grade);
+        
+        if (![1, 2, 3].includes(gradeNumber)) {
+          throw new Error('يجب اختيار الصف الدراسي من القائمة.');
+        }
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert(
+            [
+              {
+                id: data.user.id,
+                full_name: formData.fullName,
+                phone: formData.phone,
+                grade_level: gradeNumber,
+                role: 'student',
+                is_active: false,
+                subscription_status: 'pending',
+                access_mode: 'full_grade',
+              },
+            ],
+            { onConflict: 'id' },
+          );
+
+        if (profileError) throw profileError;
+
+        // ✅ يدخل الداشبورد على طول
+        navigate('/dashboard');
       }
 
       // ════ FORGOT PASSWORD ════
@@ -344,6 +354,9 @@ const AuthPage = () => {
                   value={formData.grade}
                   onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
                 >
+                  <option value="" disabled>
+                    اختر الصف الدراسي
+                  </option>
                   <option value="1">الصف الأول الثانوي</option>
                   <option value="2">الصف الثاني الثانوي</option>
                   <option value="3">الصف الثالث الثانوي</option>

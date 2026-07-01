@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { WHATSAPP_LINK } from '../../lib/contact';
 
 const GRADE_LABELS = { 1: 'أولى ثانوي', 2: 'ثانية ثانوي', 3: 'ثالثة ثانوي' };
 const SUB_LABELS = { 
@@ -126,7 +127,7 @@ const StudentHome = ({ units, exams, profile }) => {
           <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap gap-2">
               <a
-                href="https://wa.me/2010XXXXXXXX"
+                href={WHATSAPP_LINK}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-green-900/30 transition hover:scale-105"
