@@ -40,20 +40,37 @@ function App() {
                 path="/"
                 element={
                   <>
-                    <Seo
-                      title="Bayan | منصة تعليمية ذكية للطلاب"
-                      description="اكتشف دروسًا، اختبارات، وباقات اشتراك مخصصة لطلاب الثانوية مع منصة Bayan التعليمية المتكاملة."
-                      canonical="/"
-                      schema={{
-                        '@context': 'https://schema.org',
-                        '@type': 'EducationalOrganization',
-                        name: 'Bayan',
-                        url: 'https://bayan-gray.vercel.app/',
-                        description: 'منصة تعليمية متكاملة تقدم دروسًا، اختبارات، ومتابعة للطلاب في المرحلة الثانوية.',
-                        areaServed: 'Egypt',
-                        sameAs: ['https://bayan-gray.vercel.app/']
-                      }}
-                    />
+                      <Seo
+                        title="منصة بيان — بَيَان | إسماعيل رمضان" 
+                        description="منصة بيان: باقات اشتراك، دروس فيديو، واختبارات تفاعلية للثانوية. مع الأستاذ إسماعيل رمضان لتطوير مهارات اللغة العربية." 
+                        canonical="/"
+                        schema={{
+                          '@context': 'https://schema.org',
+                          '@graph': [
+                            {
+                              '@type': 'Organization',
+                              name: 'منصة بيان',
+                              url: 'https://bayan-gray.vercel.app/',
+                              logo: 'https://bayan-gray.vercel.app/Bayan-Icon.png',
+                              sameAs: ['https://bayan-gray.vercel.app/']
+                            },
+                            {
+                              '@type': 'WebSite',
+                              name: 'منصة بيان',
+                              url: 'https://bayan-gray.vercel.app/',
+                              description: 'منصة تعليمية تقدم دروسًا، اختبارات، وباقات اشتراك مخصصة للطلاب.'
+                            },
+                            {
+                              '@type': 'Person',
+                              name: 'إسماعيل رمضان',
+                              url: 'https://bayan-gray.vercel.app/',
+                              jobTitle: 'مدرّس اللغة العربية',
+                              description: 'المعلم والمؤسس لمنصة بيان، يقدم دروسًا ميسرة للثانوية.'
+                            }
+                          ]
+                        }}
+                      />
+                      <h1 className="sr-only">منصة بيان — إسماعيل رمضان</h1>
                     <Navbar />
                     <Hero />
                     <Stats />

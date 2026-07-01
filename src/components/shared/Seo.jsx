@@ -1,9 +1,10 @@
 import { Helmet } from 'react-helmet-async';
 
 const SITE_URL = 'https://bayan-gray.vercel.app';
+const SITE_NAME = 'منصة بيان';
 const DEFAULT_TITLE = 'Bayan | منصة تعليمية ذكية للطلاب';
 const DEFAULT_DESCRIPTION = 'Bayan منصة تعليمية متكاملة تقدم دروسًا، اختبارات، ومحتوى مخصص للطلاب في المرحلة الثانوية.';
-const DEFAULT_IMAGE = '/favicon.svg';
+const DEFAULT_IMAGE = '/Bayan-Icon.png';
 
 const normalizeUrl = (url) => {
   if (!url) return SITE_URL;
@@ -25,6 +26,28 @@ const Seo = ({
   const pageCanonical = normalizeUrl(canonical);
   const pageImage = normalizeUrl(image);
 
+  // default JSON-LD: Organization + WebSite to improve branded search for "منصة بيان"
+  const defaultSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        name: SITE_NAME,
+        url: SITE_URL,
+        logo: normalizeUrl(DEFAULT_IMAGE),
+        sameAs: [SITE_URL],
+      },
+      {
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: SITE_URL,
+        description: DEFAULT_DESCRIPTION,
+      },
+    ],
+  };
+
+  const schemaToUse = schema || defaultSchema;
+
   return (
     <Helmet>
       <title>{pageTitle}</title>
@@ -40,7 +63,7 @@ const Seo = ({
       <meta name="twitter:description" content={pageDescription} />
       <meta name="twitter:image" content={pageImage} />
       {noIndex ? <meta name="robots" content="noindex,nofollow" /> : <meta name="robots" content="index,follow" />}
-      {schema ? <script type="application/ld+json">{JSON.stringify(schema)}</script> : null}
+      {schemaToUse ? <script type="application/ld+json">{JSON.stringify(schemaToUse)}</script> : null}
     </Helmet>
   );
 };
