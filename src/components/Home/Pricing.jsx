@@ -85,28 +85,46 @@ const Pricing = () => {
         setLoading(true);
         setError('');
 
-        const { data, error: fetchError } = await supabase
-          .from('subscription_plans')
-          .select(`
-            *,
-            plan_units (
-              id,
-              unit_id,
-              units (
-                id,
-                title,
-                term,
-                is_final_review
-              )
-            )
-          `)
-          .eq('is_active', true)
-          .order('grade_level', { ascending: true })
-          .order('price', { ascending: true });
+        const [plansRes, planUnitsRes, unitsRes] = await Promise.all([
+          supabase
+            .from('subscription_plans')
+            .select('*')
+            .eq('is_active', true)
+            .order('grade_level', { ascending: true })
+            .order('price', { ascending: true }),
+          supabase
+            .from('plan_units')
+            .select('id, plan_id, unit_id'),
+          supabase
+            .from('units')
+            .select('id, title, term, is_final_review')
+        ]);
 
-        if (fetchError) throw fetchError;
+        if (plansRes.error) throw plansRes.error;
+        if (planUnitsRes.error) throw planUnitsRes.error;
+        if (unitsRes.error) throw unitsRes.error;
 
-        setPlans(data || []);
+        const plans = plansRes.data || [];
+        const units = unitsRes.data || [];
+        const unitsById = new Map(units.map((unit) => [unit.id, unit]));
+
+        const planUnitsByPlanId = new Map();
+        for (const row of planUnitsRes.data || []) {
+          if (!row?.plan_id) continue;
+          const existing = planUnitsByPlanId.get(row.plan_id) || [];
+          existing.push({
+            id: row.id,
+            plan_id: row.plan_id,
+            unit_id: row.unit_id,
+            units: unitsById.get(row.unit_id) || null,
+          });
+          planUnitsByPlanId.set(row.plan_id, existing);
+        }
+
+        setPlans(plans.map((plan) => ({
+          ...plan,
+          plan_units: planUnitsByPlanId.get(plan.id) || [],
+        })));
       } catch (err) {
         console.error('Pricing fetch error:', err);
         setError(err.message || 'حدث خطأ أثناء تحميل الباقات');

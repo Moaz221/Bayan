@@ -21,10 +21,10 @@ const STRUCTURED_DATA = {
   url: 'https://bayan-platform.com',
   logo: 'https://bayan-platform.com/bayan-icon.png',
   sameAs: [
-    'https://facebook.com/bayan.platform',
-    'https://t.me/bayan_platform',
-    'https://www.tiktok.com/@bayan_platform',
-    'https://www.youtube.com/@bayan_platform',
+    'https://t.me/Ismail_Ram',
+    'https://www.tiktok.com/@bayan_arabic70?_r=1&_t=ZS-97eEsaXzn4m',
+    'https://www.youtube.com/@ismalrmdn2498',
+    'https://wa.me/201153463139?text=السلام%20عليكم%20ورحمة%20الله%20وبركاته%20يا%20أستاذ%20إسماعيل.%20أرغب%20في%20الاشتراك%20بـ%20%5Bالصف%20الأول%20الثانوي%5D%20-%20%5Bالترم%20الأول%5D.%20شكرا',
   ],
   contactPoint: [
     {
@@ -87,7 +87,7 @@ const socialLinks = [
   {
     name: 'Telegram',
     label: 'تيليجرام',
-    href: 'https://t.me/bayan_platform',
+    href: 'https://t.me/Ismail_Ram',
     Icon: TelegramIcon,
     className: 'hover:border-sky-400/40 hover:bg-sky-500/10 hover:text-sky-300',
     rel: 'noopener noreferrer me',
@@ -95,7 +95,7 @@ const socialLinks = [
   {
     name: 'TikTok',
     label: 'تيك توك',
-    href: 'https://www.tiktok.com/@bayan_platform',
+    href: 'https://www.tiktok.com/@bayan_arabic70?_r=1&_t=ZS-97eEsaXzn4m',
     Icon: TikTokIcon,
     className: 'hover:border-pink-400/40 hover:bg-pink-500/10 hover:text-pink-300',
     rel: 'noopener noreferrer me',
@@ -103,7 +103,7 @@ const socialLinks = [
   {
     name: 'YouTube',
     label: 'يوتيوب',
-    href: 'https://www.youtube.com/@bayan_platform',
+    href: 'https://www.youtube.com/@ismalrmdn2498',
     Icon: YouTubeIcon,
     className: 'hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-300',
     rel: 'noopener noreferrer me',
@@ -112,30 +112,9 @@ const socialLinks = [
 
 const contactItems = [
   {
-    title: 'الهاتف',
-    value: '+20 10 XXXX XXXX',
-    href: 'tel:+201000000000',
-    Icon: Phone,
-    ariaLabel: 'اتصل بنا على الهاتف',
-  },
-  {
-    title: 'واتساب',
-    value: 'تواصل مباشر',
-    href: 'https://wa.me/201000000000',
-    Icon: MessageCircle,
-    ariaLabel: 'تواصل معنا عبر واتساب',
-  },
-  {
-    title: 'البريد الإلكتروني',
-    value: 'info@bayan-platform.com',
-    href: 'mailto:info@bayan-platform.com',
-    Icon: Mail,
-    ariaLabel: 'راسلنا على البريد الإلكتروني',
-  },
-  {
-    title: 'المكان',
-    value: 'مصر – أونلاين',
-    href: 'https://maps.google.com/?q=Egypt',
+    title: 'العنوان',
+    value: 'بني سويف – أهناسيا – المدينة – كوم الرمل البحري',
+    href: 'https://maps.google.com/?q=بني%20سويف%20اهناسيا%20المدينة%20كوم%20الرمل%20البحري',
     Icon: MapPin,
     ariaLabel: 'موقعنا على الخريطة',
   },
@@ -204,7 +183,7 @@ const Footer = ({ compact = false }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6 }}
-            className="grid gap-8 lg:grid-cols-[1.15fr_1fr_1fr]"
+            className="grid gap-8 lg:grid-cols-[1.15fr_1fr]"
           >
             {/* Brand */}
             <div className="text-right">
@@ -258,54 +237,10 @@ const Footer = ({ compact = false }) => {
               </nav>
             </div>
 
-            {/* Contact Info */}
-            <address
-              className="not-italic"
-              aria-label="معلومات التواصل مع منصة بيان"
-              itemScope
-              itemType="https://schema.org/ContactPage"
-            >
-              <h3 className="mb-5 text-right font-tajawal text-lg font-bold text-white">
-                معلومات التواصل
-              </h3>
-
-              <ul className="space-y-3 list-none p-0">
-                {contactItems.map((item) => {
-                  const Icon = item.Icon;
-                  return (
-                    <li key={item.title}>
-                      <motion.a
-                        href={item.href}
-                        target={item.href.startsWith('http') ? '_blank' : undefined}
-                        rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                        aria-label={item.ariaLabel}
-                        whileHover={{ x: -4 }}
-                        className="group flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 transition hover:border-amber-500/30 hover:bg-amber-500/10"
-                      >
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-white">{item.title}</p>
-                          <p className="mt-0.5 text-xs text-gray-500 group-hover:text-gray-300">
-                            {item.value}
-                          </p>
-                        </div>
-
-                        <span
-                          className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-300"
-                          aria-hidden="true"
-                        >
-                          <Icon size={18} />
-                        </span>
-                      </motion.a>
-                    </li>
-                  );
-                })}
-              </ul>
-            </address>
-
             {/* Social */}
             <div>
               <h3 className="mb-5 text-right font-tajawal text-lg font-bold text-white">
-                تابعنا على
+                تابعنا على وسائل التواصل
               </h3>
 
               <nav aria-label="حسابات منصة بيان على وسائل التواصل الاجتماعي">
@@ -335,25 +270,32 @@ const Footer = ({ compact = false }) => {
                 </ul>
               </nav>
 
-              <div
-                className="mt-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-right"
-                role="status"
-                aria-live="polite"
-                aria-label="حالة الدعم الفني"
-              >
-                <div className="flex items-center justify-end gap-2 text-emerald-300">
-                  <span className="text-sm font-bold">الدعم متاح للطلاب</span>
-                  <span
-                    className="relative flex h-2.5 w-2.5"
-                    aria-hidden="true"
-                  >
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-                  </span>
-                </div>
-                <p className="mt-2 text-xs leading-6 text-gray-400">
-                  الروابط الحالية وهمية ويمكن تعديلها لاحقًا من ملف Footer فقط.
-                </p>
+              <div className="mt-4 space-y-2">
+                {contactItems.map((item) => {
+                  const Icon = item.Icon;
+                  return (
+                    <motion.a
+                      key={item.title}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={item.ariaLabel}
+                      whileHover={{ x: -3 }}
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-right transition hover:border-amber-500/30 hover:bg-amber-500/10"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-white">{item.title}</p>
+                        <p className="mt-0.5 text-xs text-gray-500">{item.value}</p>
+                      </div>
+                      <span
+                        className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-300"
+                        aria-hidden="true"
+                      >
+                        <Icon size={16} />
+                      </span>
+                    </motion.a>
+                  );
+                })}
               </div>
             </div>
           </motion.div>

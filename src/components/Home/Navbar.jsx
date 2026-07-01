@@ -1,8 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Menu, X, MessageCircle, Sparkles } from 'lucide-react';
 import BayanIcon from '../../assets/Bayan-Icon.png';
+
+// ══ Constants ══
+// مصدر واحد لرابط الواتساب - يتستخدم في الديسكتوب والموبايل من نفس المكان
+const WHATSAPP_NUMBER = '201153463139';
+const WHATSAPP_MESSAGE =
+  'السلام عليكم ورحمة الله وبركاته يا أستاذ إسماعيل. أرغب في الاشتراك بـ [الصف الأول الثانوي] - [الترم الأول]. شكرا';
+const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  WHATSAPP_MESSAGE
+)}`;
+
+const NAVBAR_HEIGHT = 90; // px
+const SCROLL_THRESHOLD = 30; // px - بعده يبقى الـ navbar "scrolled"
+const ACTIVE_SECTION_OFFSET = 150; // px - المسافة من فوق الشاشة اللي بيتحدد عندها الـ section النشط
+const SCROLL_TO_OFFSET = 100; // px - المسافة اللي نسيبها فوق العنصر لما نعمل scroll ليه
 
 const navLinks = [
   { label: 'الرئيسية', href: '#hero' },
@@ -16,34 +30,76 @@ export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
+  const rafRef = useRef(null);
 
+  // ══ Scroll handling (مع throttle عبر requestAnimationFrame) ══
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 30);
+    const handleScroll = () => {
+      if (rafRef.current) return; // فيه فريم شغال، متعمل حاجة
 
-      const sections = navLinks.map((l) => l.href.replace('#', ''));
-      const current = sections.find((id) => {
-        const el = document.getElementById(id);
-        if (!el) return false;
-        const rect = el.getBoundingClientRect();
-        return rect.top <= 150 && rect.bottom >= 150;
+      rafRef.current = requestAnimationFrame(() => {
+        setScrolled(window.scrollY > SCROLL_THRESHOLD);
+
+        const sections = navLinks.map((l) => l.href.replace('#', ''));
+        const current = sections.find((id) => {
+          const el = document.getElementById(id);
+          if (!el) return false;
+          const rect = el.getBoundingClientRect();
+          return rect.top <= ACTIVE_SECTION_OFFSET && rect.bottom >= ACTIVE_SECTION_OFFSET;
+        });
+        if (current) setActiveSection(current);
+
+        rafRef.current = null;
       });
-      if (current) setActiveSection(current);
     };
-    window.addEventListener('scroll', onScroll);
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
-  const scrollToSection = (id) => {
+  // ══ قفل السكرول على body لما المنيو مفتوحة ══
+  useEffect(() => {
+    if (mobileOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [mobileOpen]);
+
+  // ══ قفل المنيو بـ Escape ══
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileOpen]);
+
+  const scrollToSection = useCallback((id) => {
     setMobileOpen(false);
     const target = id.replace('#', '');
+    setActiveSection(target); // تحديث فوري للـ pill لحظة الضغط
     const element = document.getElementById(target);
     if (element) {
-      const top = element.getBoundingClientRect().top + window.scrollY - 100;
+      const top = element.getBoundingClientRect().top + window.scrollY - SCROLL_TO_OFFSET;
       window.scrollTo({ top, behavior: 'smooth' });
     }
-  };
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    setMobileOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   return (
     <>
@@ -59,11 +115,10 @@ export const Navbar = () => {
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
 
         <div className="container mx-auto px-6 lg:px-12">
-          {/* تكبير الارتفاع لـ 90px */}
-          <div className="flex items-center justify-between h-[90px]">
+          <div className="flex items-center justify-between" style={{ height: `${NAVBAR_HEIGHT}px` }}>
 
             {/* ══ Logo ══ */}
-            <Link to="/" className="group flex items-center gap-3 select-none">
+            <Link to="/" onClick={scrollToTop} className="group flex items-center gap-3 select-none">
               <div className="relative">
                 <motion.div
                   className="absolute inset-0 rounded-full pointer-events-none"
@@ -85,7 +140,6 @@ export const Navbar = () => {
               </div>
 
               <div className="flex flex-col leading-none">
-                {/* تكبير خط اللوجو */}
                 <span className="font-amiri text-3xl font-bold shimmer-text">
                   بَيَان
                 </span>
@@ -96,13 +150,21 @@ export const Navbar = () => {
             </Link>
 
             {/* ══ Desktop Nav Links ══ */}
-            <nav className="hidden lg:flex items-center gap-1 glass-premium rounded-full px-3 py-2">
+            <nav
+              className="hidden lg:flex items-center gap-1 glass-premium rounded-full px-3 py-2"
+              aria-label="التنقل الرئيسي"
+            >
               {navLinks.map((link) => {
                 const isActive = activeSection === link.href.replace('#', '');
                 return (
-                  <button
+                  <a
                     key={link.label}
-                    onClick={() => scrollToSection(link.href)}
+                    href={link.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollToSection(link.href);
+                    }}
+                    aria-current={isActive ? 'true' : undefined}
                     className="relative px-6 py-2.5 text-base font-medium font-tajawal transition-colors duration-300"
                   >
                     <span
@@ -124,7 +186,7 @@ export const Navbar = () => {
                         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                       />
                     )}
-                  </button>
+                  </a>
                 );
               })}
             </nav>
@@ -132,11 +194,12 @@ export const Navbar = () => {
             {/* ══ Actions Desktop ══ */}
             <div className="hidden lg:flex items-center gap-4">
               <motion.a
-                href="https://wa.me/2010XXXXXXXX"
+                href={WHATSAPP_LINK}
                 target="_blank"
                 rel="noreferrer"
                 whileHover={{ scale: 1.08, rotate: -5 }}
                 whileTap={{ scale: 0.92 }}
+                aria-label="تواصل معنا عبر واتساب"
                 className="relative w-12 h-12 rounded-full glass-premium flex items-center justify-center text-emerald-400 hover:text-emerald-300 group"
               >
                 <MessageCircle size={20} />
@@ -160,6 +223,9 @@ export const Navbar = () => {
             {/* ══ Mobile Menu Button ══ */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
+              aria-expanded={mobileOpen}
+              aria-label={mobileOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+              aria-controls="mobile-menu"
               className="lg:hidden relative w-12 h-12 rounded-full glass-premium flex items-center justify-center text-white"
             >
               <AnimatePresence mode="wait">
@@ -201,24 +267,33 @@ export const Navbar = () => {
             onClick={() => setMobileOpen(false)}
           >
             <motion.div
+              id="mobile-menu"
+              role="dialog"
+              aria-modal="true"
+              aria-label="قائمة التنقل"
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -20, opacity: 0 }}
               transition={{ duration: 0.3 }}
               onClick={(e) => e.stopPropagation()}
-              // تعديل الـ top ليتناسب مع الـ Navbar الجديد
-              className="absolute top-[90px] left-4 right-4 rounded-3xl glass-premium p-6"
+              className="absolute left-4 right-4 rounded-3xl glass-premium p-6"
+              style={{ top: `${NAVBAR_HEIGHT}px` }}
             >
               <div className="space-y-2 text-right">
                 {navLinks.map((link, i) => {
                   const isActive = activeSection === link.href.replace('#', '');
                   return (
-                    <motion.button
+                    <motion.a
                       key={link.label}
+                      href={link.href}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.08 }}
-                      onClick={() => scrollToSection(link.href)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        scrollToSection(link.href);
+                      }}
+                      aria-current={isActive ? 'true' : undefined}
                       className={`block w-full text-right py-4 px-5 rounded-2xl text-base font-tajawal font-medium transition ${
                         isActive
                           ? 'bg-gradient-to-l from-amber-500/20 to-transparent text-amber-400'
@@ -226,19 +301,19 @@ export const Navbar = () => {
                       }`}
                     >
                       {link.label}
-                    </motion.button>
+                    </motion.a>
                   );
                 })}
 
                 <div className="pt-4 space-y-3 border-t border-white/10 mt-3">
                   <a
-                    href="https://wa.me/2010XXXXXXXX"
+                    href={WHATSAPP_LINK}
                     target="_blank"
                     rel="noreferrer"
                     className="block w-full text-center py-3.5 rounded-2xl bg-emerald-500/10 text-emerald-300 font-medium font-tajawal text-base"
                   >
                     <MessageCircle size={18} className="inline ml-2" />
-                    تواصل واتساب
+                    تواصل معنا عبر واتساب
                   </a>
 
                   <Link
@@ -246,7 +321,7 @@ export const Navbar = () => {
                     onClick={() => setMobileOpen(false)}
                     className="block w-full text-center py-3.5 rounded-2xl btn-gold font-bold font-tajawal text-base"
                   >
-                    ابدأ رحلتك الآن
+                    ابدأ الآن
                   </Link>
                 </div>
               </div>

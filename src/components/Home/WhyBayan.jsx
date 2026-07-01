@@ -23,8 +23,8 @@ export const WhyBayan = () => {
       <div className="container mx-auto px-6 lg:px-16 relative z-10">
         <motion.div initial={{ opacity: 0, y: 26 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.75 }} className="mx-auto mb-14 max-w-3xl text-center">
           <div className="diamond-divider justify-center font-amiri mb-4"><span>✦ لماذا بَيان؟ ✦</span></div>
-          <h2 className="font-amiri text-4xl lg:text-6xl font-black luxury-section-title">لأن التفوق لا يأتي صدفة</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-gray-400 leading-8">منصة بَيان تجمع بين شرح الأستاذ، تنظيم المنهج، ملفات المراجعة، والامتحانات التفاعلية في تجربة واحدة واضحة ومريحة للطالب.</p>
+          <h2 className="font-amiri text-4xl lg:text-6xl font-black luxury-section-title">شرح دروس، امتحانات، ومراجعات لطلاب الثانوية</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-gray-400 leading-8">منصة بَيان تجمع بين شرح الأستاذ، تنظيم المنهج، ملفات المراجعة، والامتحانات التفاعلية في تجربة واحدة واضحة ومريحة للطالب، لتسهيل الدراسة والنجاح في الثانوية والبكالوريا.</p>
         </motion.div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">

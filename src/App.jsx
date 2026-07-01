@@ -10,6 +10,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 import Footer from './components/shared/Footer';
 import AdminRoute from './components/shared/AdminRoute';
+import Seo from './components/shared/Seo';
 import { AuthProvider } from './hooks/useAuth.jsx';
 import { ToastProvider } from './components/shared/ToastProvider';
 import HomeBackground from './assets/Home_Background.png';
@@ -39,11 +40,26 @@ function App() {
                 path="/"
                 element={
                   <>
+                    <Seo
+                      title="Bayan | منصة تعليمية ذكية للطلاب"
+                      description="اكتشف دروسًا، اختبارات، وباقات اشتراك مخصصة لطلاب الثانوية مع منصة Bayan التعليمية المتكاملة."
+                      canonical="/"
+                      schema={{
+                        '@context': 'https://schema.org',
+                        '@type': 'EducationalOrganization',
+                        name: 'Bayan',
+                        url: 'https://bayan-gray.vercel.app/',
+                        description: 'منصة تعليمية متكاملة تقدم دروسًا، اختبارات، ومتابعة للطلاب في المرحلة الثانوية.',
+                        areaServed: 'Egypt',
+                        sameAs: ['https://bayan-gray.vercel.app/']
+                      }}
+                    />
                     <Navbar />
                     <Hero />
                     <Stats />
                     <WhyBayan />
                     <Pricing />
+                    <div id="contact" className="scroll-mt-28" />
                     <Footer />
                   </>
                 }
